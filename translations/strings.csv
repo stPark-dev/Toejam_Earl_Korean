@@ -1,11 +1,11 @@
 id,en,ko,refs
-00A1A0, pts,,pcrel@00A11E
-00A1A6, pts,,pcrel@00A16E
-00A730,un-fall .....,,pcrel@00A6CC
-00B712, on,,pcrel@00B6AC
-00B716,vacation,,pcrel@00B6C0
-00B720, on,,pcrel@00B6EE
-00B724,vacation,,pcrel@00B702
+00A1A0, pts,점,pcrel@00A11E
+00A1A6, pts,점,pcrel@00A16E
+00A730,un-fall .....,미확인,pcrel@00A6CC
+00B712, on, 휴가,pcrel@00B6AC
+00B716,vacation,중,pcrel@00B6C0
+00B720, on, 휴가,pcrel@00B6EE
+00B724,vacation,중,pcrel@00B702
 020376,rocketship windshield,로켓 앞유리,abs32@0202CE
 02038C,left megawatt speaker,왼쪽 메가와트 스피커,abs32@0202D6
 0203A2,super funkomatic amplamator,슈퍼 펑코매틱 앰플러메이터,abs32@0202DE
@@ -261,39 +261,40 @@ id,en,ko,refs
 038014,awesome support -- hugh bowen,든든한 지원 -- hugh bowen,pcrel@037E1C
 038032,a johnson-voorsanger production,johnson-voorsanger 제작,pcrel@037E32
 03AB8E,press and hold start to exit,나가려면 START를 길게 누르세요,pcrel@03A950
-0A9F48,wiener,,abs32@0A9F82
-0A9F4F,dufus,,abs32@0A9F86
-0A9F55,pnr,,abs32@0A9F8A
-0A9F5B,peanut,,abs32@0A9F8E
-0A9F62,dude,,abs32@0A9F92
-0A9F67,bro,,abs32@0A9F96
-0A9F6B,homey,,abs32@0A9F9A
-0A9F71,rar,,abs32@0A9F9E
-0A9F77,fl,,abs32@0A9FA2
-0A9F7C,goner,,abs32@0A9FA6
-0ABC42,icarus wings ,,abs32@0ABDBC
-0ABC50,spring shoes ,,abs32@0ABDC0
-0ABC5E,innertube ...,,abs32@0ABDC4
-0ABC6C,tomatoes ....,,abs32@0ABDC8
-0ABC7A,sling shot ..,,abs32@0ABDCC
-0ABC88,rocket skates,,abs32@0ABDD0
-0ABC96,rose bushes .,,abs32@0ABDD4
-0ABCA4,super hitops ,,abs32@0ABDD8
-0ABCB2,doorway .....,,abs32@0ABDDC
-0ABCC0,food ........,,abs32@0ABDE0
-0ABCCE,rootbeer ....,,abs32@0ABDE4
-0ABCDC,promotion ...,,abs32@0ABDE8
-0ABCEA,togetherness ,,abs32@0ABDEC
-0ABCF8,rain cloud ..,,abs32@0ABDF0
-0ABD06,fudge sundae ,,abs32@0ABDF4
-0ABD14,decoy .......,,abs32@0ABDF8
-0ABD22,total bummer!,,abs32@0ABDFC
-0ABD30,extra life ..,,abs32@0ABE00
-0ABD3E,randomizer ..,,abs32@0ABE04
-0ABD4C,telephone ...,,abs32@0ABE08
-0ABD5A,extra buck ..,,abs32@0ABE0C
-0ABD68,jackpot .....,,abs32@0ABE10
-0ABD76,tomato rain .,,abs32@0ABE14
-0ABD84,earthling ...,,abs32@0ABE18
-0ABD92,school book .,,abs32@0ABE1C
-0ABDA0,boombox .....,,abs32@0ABE20
+0A9F48,wiener,위너,abs32@0A9F82
+0A9F4F,dufus,바보,abs32@0A9F86
+0A9F55,pnr,범생이,abs32@0A9F8A
+0A9F5B,peanut,땅콩,abs32@0A9F8E
+0A9F62,dude,친구,abs32@0A9F92
+0A9F67,bro,형님,abs32@0A9F96
+0A9F6B,homey,홈보이,abs32@0A9F9A
+0A9F71,rar,랩마스터,abs32@0A9F9E
+0A9F77,fl,펑크로드,abs32@0A9FA2
+0A9F7C,goner,끝장,abs32@0A9FA6
+0ABBB6,bonus hitops,보너스 하이탑,abs32@1011EC
+0ABC42,icarus wings ,이카루스 날개,abs32@0ABDBC
+0ABC50,spring shoes ,스프링 슈즈,abs32@0ABDC0
+0ABC5E,innertube ...,튜브,abs32@0ABDC4
+0ABC6C,tomatoes ....,토마토,abs32@0ABDC8
+0ABC7A,sling shot ..,새총,abs32@0ABDCC
+0ABC88,rocket skates,로켓 스케이트,abs32@0ABDD0
+0ABC96,rose bushes .,장미 덤불,abs32@0ABDD4
+0ABCA4,super hitops ,슈퍼 하이탑,abs32@0ABDD8
+0ABCB2,doorway .....,문,abs32@0ABDDC
+0ABCC0,food ........,음식,abs32@0ABDE0
+0ABCCE,rootbeer ....,루트비어,abs32@0ABDE4
+0ABCDC,promotion ...,승진,abs32@0ABDE8
+0ABCEA,togetherness ,우정,abs32@0ABDEC
+0ABCF8,rain cloud ..,비구름,abs32@0ABDF0
+0ABD06,fudge sundae ,퍼지 선데,abs32@0ABDF4
+0ABD14,decoy .......,가짜 선물,abs32@0ABDF8
+0ABD22,total bummer!,완전 꽝!,abs32@0ABDFC
+0ABD30,extra life ..,추가 목숨,abs32@0ABE00
+0ABD3E,randomizer ..,랜더마이저,abs32@0ABE04
+0ABD4C,telephone ...,전화,abs32@0ABE08
+0ABD5A,extra buck ..,추가 달러,abs32@0ABE0C
+0ABD68,jackpot .....,잭팟,abs32@0ABE10
+0ABD76,tomato rain .,토마토 비,abs32@0ABE14
+0ABD84,earthling ...,지구인,abs32@0ABE18
+0ABD92,school book .,교과서,abs32@0ABE1C
+0ABDA0,boombox .....,붐박스,abs32@0ABE20

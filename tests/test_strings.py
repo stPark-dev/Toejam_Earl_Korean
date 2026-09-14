@@ -88,3 +88,8 @@ def test_hud_and_present_strings_are_found(entries):
     assert table[0xB716].text == "vacation"
     assert table[0xABC42].text == "icarus wings "
     assert table[0xA1A0].text == " pts"
+
+
+def test_bonus_hitops_synthetic_entry(entries):
+    e = by_addr(entries)[0xABBB6]
+    assert e.text == "bonus hitops" and e.refs[0].kind == "abs32"

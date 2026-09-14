@@ -5,8 +5,9 @@ Layout of the expansion area (ROM grows from 1MB to 2MB):
   0x100C00  sprite piece lists for text strips of 1..8 pieces (two flag variants)
   0x101200  64 zero bytes: the blank column glyph
   0x101300  narrow (ASCII) font, 95 glyphs x 64 bytes
+  0x101180  Korean present-name pointer table (28 entries)
   0x103000  wide (Hangul) font, N glyphs x 128 bytes
-  after     relocated strings that no longer fit in place
+  after     8x8 HUD glyphs (N x 32 bytes), then relocated strings
 """
 import hashlib
 import os
@@ -16,8 +17,10 @@ import subprocess
 import tempfile
 
 from . import encode, font, strings
-from .rom import (BUBBLE_PRINT, BUBBLE_RENDERER, GLYPH_RENDERERS, MENU_DRAW,
-                  ORIGINAL_MD5, ORIGINAL_ROM, PLANE_TEXT,
+from .rom import (BONUS_HITOPS_GLYPH, BUBBLE_PRINT, BUBBLE_RENDERER, GLYPH_RENDERERS,
+                  MENU_DRAW, ORIGINAL_MD5, ORIGINAL_ROM, PLANE_TEXT, PRESENT_NAMES_ASCII,
+                  PRESENT_NAMES_GLYPH, PRESENT_NAMES_KO, PRESENT_UNKNOWN_ASCII,
+                  PRESENT_UNKNOWN_GLYPH,
                   PRINT_ROUTINES, ROOT, SPRITE_DEF_BUBBLE, SPRITE_DEF_TEXT,
                   VRAM_ALLOC_LIMIT, read_rom)
 
@@ -86,7 +89,13 @@ CMD_HOOKS = (
     (0xB64A, "imm", 0), (0xB688, "imm", 0), (0xB6A2, "imm", 0), (0xB6B6, "imm", 0),
     (0xB6C8, "imm", 0), (0xB6E4, "imm", 0), (0xB6F8, "imm", 0),   # "is on vacation"
 )
-POOL_BLOCKS = 0x40          # was 0x50: blocks 0x40-0x4F (tiles 0x480-0x4FF) hold HUD glyphs
+POOL_BLOCKS = 0x30          # was 0x50: blocks 0x30-0x4F (tiles 0x400-0x4FF) hold streamed glyphs
+BLANK_HOOKS = (0xA062, 0xA09C, 0xA0BC, 0xA5A0)      # move.w #$85B4,$C00000 in HUD code
+WORD_HOOKS_D0 = (0xA590,)                           # move.w d0,$C00000 in HUD code
+PRESENT_LOOP = 0xA536       # 32-byte loop writing 13 pre-mapped glyph words
+PRESENT_LOOP_END = 0xA5C4
+PRESENT_FIELD = 13
+PRESENT_NAME_RANGE = (0xABC42, 0xABDBC)
 VDP_CTRL = b"\x00\xc0\x00\x04"
 VDP_DATA = b"\x00\xc0\x00\x00"
 
@@ -124,21 +133,30 @@ def piece_lists():
     return b"".join(piece_list(n, flag) for flag in (1, 3) for n in range(1, 9))
 
 
-def assemble(narrow, wide, blank):
-    """Assemble text.s with the font addresses; returns (binary, symbols)."""
+def assemble(narrow, wide, hud, blank):
+    """Assemble and link text.s at CODE_ADDR; returns (binary, symbols).
+
+    Linking matters: gas leaves branches to .globl symbols as relocations,
+    so an unlinked objcopy would drop them and leave zero displacements.
+    """
     with tempfile.TemporaryDirectory() as tmp:
         obj = os.path.join(tmp, "text.o")
+        elf = os.path.join(tmp, "text.elf")
         binary = os.path.join(tmp, "text.bin")
         subprocess.run([toolchain("as"), "-m68000",
                         f"--defsym=NARROW_FONT={narrow}", f"--defsym=WIDE_FONT={wide}",
+                        f"--defsym=HUD_FONT={hud}",
                         f"--defsym=BLANK_GLYPH={blank}", f"--defsym=PIECE_LISTS={PIECE_LISTS_ADDR}",
                         "-o", obj, ASM_SOURCE], check=True)
-        subprocess.run([toolchain("objcopy"), "-O", "binary", "-j", ".text", obj, binary], check=True)
-        nm = subprocess.run([toolchain("nm"), obj], check=True, capture_output=True, text=True).stdout
+        subprocess.run([toolchain("ld"), f"-Ttext={CODE_ADDR:#x}", "-e", "render_remap",
+                        "-o", elf, obj], check=True)
+        subprocess.run([toolchain("objcopy"), "-O", "binary", "-j", ".text", elf, binary], check=True)
+        nm = subprocess.run([toolchain("nm"), elf], check=True, capture_output=True, text=True).stdout
         symbols = {}
         for line in nm.splitlines():
-            value, _kind, name = line.split()
-            symbols[name] = int(value, 16)
+            value, kind, name = line.split()
+            if kind in "Tt":
+                symbols[name] = int(value, 16) - CODE_ADDR
         return open(binary, "rb").read(), symbols
 
 
@@ -227,6 +245,36 @@ def patch_plane_text(rom, symbols):
             reg = int(form[1])
             patch(rom, site, stub, original=bytes((0x23, 0xC0 | reg)) + VDP_CTRL)
     patch(rom, VRAM_ALLOC_LIMIT, b"\x0c\x43\x00" + bytes((POOL_BLOCKS,)), original=b"\x0c\x43\x00\x50")
+    for site in BLANK_HOOKS:
+        patch(rom, site, jsr(symbols, "plane_blank") + b"\x4e\x71", original=b"\x33\xfc\x85\xb4" + VDP_DATA)
+    for site in WORD_HOOKS_D0:
+        patch(rom, site, jsr(symbols, "plane_word_d0"), original=b"\x33\xc0" + VDP_DATA)
+
+
+def patch_present_list(rom, symbols):
+    """Present list: draw names from the Korean pointer table via plane_text."""
+    patch(rom, 0xA51E + 2, struct.pack(">I", PRESENT_UNKNOWN_ASCII),
+          original=struct.pack(">I", PRESENT_UNKNOWN_GLYPH))
+    patch(rom, 0xA52C + 2, struct.pack(">I", PRESENT_NAMES_KO),
+          original=struct.pack(">I", PRESENT_NAMES_GLYPH))
+    expect(rom, PRESENT_LOOP, b"\x42\x41\x10\x18")               # clr.w d1 ; move.b (a0)+,d0
+    expect(rom, PRESENT_LOOP + 0x1E, b"\x60\xe2")                 # bra.b back to the loop
+    code = b"\x48\x50" + jsr(symbols, "plane_text_pad13") + b"\x58\x8f"    # pea (a0); jsr; addq.l #4,sp
+    branch = PRESENT_LOOP_END - (PRESENT_LOOP + len(code) + 2)
+    code += b"\x60\x00" + struct.pack(">h", branch)                # bra.w PRESENT_LOOP_END
+    code += b"\x4e\x71" * ((0x20 - len(code)) // 2)
+    rom[PRESENT_LOOP:PRESENT_LOOP + 0x20] = code
+    table = b"".join(struct.pack(">I", struct.unpack_from(">I", rom, PRESENT_NAMES_ASCII + i * 4)[0])
+                     for i in range(27)) + struct.pack(">I", BONUS_HITOPS_GLYPH)
+    rom[PRESENT_NAMES_KO:PRESENT_NAMES_KO + len(table)] = table
+
+
+def add_present_table_refs(rom, entries):
+    """Present names are also pointed to by the new table; relocation must update it."""
+    targets = {struct.unpack_from(">I", rom, PRESENT_NAMES_ASCII + i * 4)[0]: i for i in range(27)}
+    for entry in entries:
+        if entry.addr in targets:
+            entry.refs.append(strings.Ref(PRESENT_NAMES_KO + targets[entry.addr] * 4, "abs32"))
 
 
 def patch_line_spacing(rom):
@@ -258,6 +306,9 @@ def place_strings(rom, entries, translations, wide_map, free_addr):
         if any(lo <= entry.addr < hi for lo, hi in BUBBLE_RANGES) \
                 and encode.columns(ko) > BUBBLE_COLUMNS and entry.addr not in NOT_BUBBLES:
             raise BuildError(f"{entry.key} {ko!r} is {encode.columns(ko)} columns; bubbles allow {BUBBLE_COLUMNS}")
+        if (PRESENT_NAME_RANGE[0] <= entry.addr < PRESENT_NAME_RANGE[1] or entry.addr == BONUS_HITOPS_GLYPH) \
+                and encode.columns(ko) > PRESENT_FIELD:
+            raise BuildError(f"{entry.key} {ko!r} is {encode.columns(ko)} columns; present names allow {PRESENT_FIELD}")
         data = encode.encode(ko, wide_map)
         size = slot_size(rom, entry)
         if len(data) <= size:
@@ -299,17 +350,22 @@ def build(translations, original=None):
     entries = strings.extract(original)
     wide_chars = encode.collect_wide_chars(translations.values())
     wide_map = {ch: i for i, ch in enumerate(wide_chars)}
-    code, symbols = assemble(NARROW_ADDR, WIDE_ADDR, BLANK_ADDR)
+    wide = font.wide_table(wide_chars)
+    hud = font.hud_table(wide_chars)
+    hud_addr = WIDE_ADDR + len(wide)
+    code, symbols = assemble(NARROW_ADDR, WIDE_ADDR, hud_addr, BLANK_ADDR)
     patch_engine(rom, code, symbols)
     patch_plane_text(rom, symbols)
+    patch_present_list(rom, symbols)
+    add_present_table_refs(rom, entries)
     patch_line_spacing(rom)
     rom[BLANK_ADDR:BLANK_ADDR + 64] = bytes(64)
     narrow = font.narrow_table()
     assert NARROW_ADDR + len(narrow) <= WIDE_ADDR
     rom[NARROW_ADDR:NARROW_ADDR + len(narrow)] = narrow
-    wide = font.wide_table(wide_chars)
     rom[WIDE_ADDR:WIDE_ADDR + len(wide)] = wide
-    place_strings(rom, entries, translations, wide_map, WIDE_ADDR + len(wide))
+    rom[hud_addr:hud_addr + len(hud)] = hud
+    place_strings(rom, entries, translations, wide_map, hud_addr + len(hud))
     fix_header(rom)
     return bytes(rom)
 

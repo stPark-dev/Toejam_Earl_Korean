@@ -47,3 +47,27 @@ def test_wide_table_size_and_determinism():
     a = font.wide_table(["가", "나"])
     assert len(a) == 256
     assert a == font.wide_table(["가", "나"])
+
+
+def test_hangul_vowel_stroke_survives_outline():
+    # Galmuri11 drew the ㅏ bar of 한 one pixel wide; the outline swallowed it
+    # and 한 looked like 힌. The wide font must keep an ink pixel to the right
+    # of the vertical stem in the middle rows.
+    cell = font.paint_cell(font.ink_mask("한", font.WIDE_W))
+    stem = max(c for r in range(1, 4) for c in range(font.WIDE_W) if cell[r][c] == font.COLOR_INK)
+    assert any(cell[r][stem + 1] == font.COLOR_INK for r in range(4, 9)), "ㅏ bar missing"
+
+
+def test_narrow_latin_fits_seven_columns():
+    for ch in "AWMg1":
+        cell = font.paint_cell(font.ink_mask(ch, font.NARROW_W))
+        assert all(row[-1] == 0 for row in cell)
+        assert any(v == font.COLOR_INK for row in cell for v in row)
+
+
+def test_hud_glyph_is_one_opaque_tile_with_ink():
+    tile = font.hud_glyph("위")
+    assert len(tile) == 32
+    nibbles = {b >> 4 for b in tile} | {b & 15 for b in tile}
+    assert nibbles == {font.HUD_BG, font.HUD_INK}
+    assert len(font.hud_table(["위", "너"])) == 64

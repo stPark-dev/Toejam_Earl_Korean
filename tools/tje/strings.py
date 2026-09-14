@@ -7,7 +7,8 @@ Two reference kinds exist:
 import csv
 from dataclasses import dataclass, field
 
-from .rom import RANK_NAMES, be16, be32, in_text_window, s16
+from .rom import (BONUS_HITOPS_GLYPH, PRESENT_NAMES_KO, RANK_NAMES, be16, be32,
+                  in_text_window, s16)
 
 MAX_LEN = 64
 
@@ -92,8 +93,13 @@ def scan_refs(rom):
 def extract(rom):
     """Return entries sorted by address."""
     refs = scan_refs(rom)
-    return [Entry(addr, string_at(rom, addr), sorted(r, key=lambda x: x.addr))
-            for addr, r in sorted(refs.items())]
+    entries = [Entry(addr, string_at(rom, addr), sorted(r, key=lambda x: x.addr))
+               for addr, r in sorted(refs.items())]
+    # "bonus hitops" exists only as a pre-mapped glyph string; the build gives
+    # it a real pointer in the Korean present-name table.
+    entries.append(Entry(BONUS_HITOPS_GLYPH, "bonus hitops",
+                         [Ref(PRESENT_NAMES_KO + 27 * 4, "abs32")]))
+    return sorted(entries, key=lambda e: e.addr)
 
 
 def write_csv(entries, path):

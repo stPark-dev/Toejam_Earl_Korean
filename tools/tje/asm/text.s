@@ -9,7 +9,8 @@
 | staging buffer (8KB) from overflowing.
 | C-style args after the movem (8 regs = 32 bytes + return address):
 |   0x24(sp) string, 0x2A(sp) columns (word), 0x2E(sp) vram tile (word)
-| Symbols NARROW_FONT, WIDE_FONT, BLANK_GLYPH, PIECE_LISTS come from --defsym.
+| Symbols NARROW_FONT, WIDE_FONT, HUD_FONT, BLANK_GLYPH, PIECE_LISTS come
+| from --defsym.
 
 	.text
 	.globl	render_remap, render_raw, render_bubble
@@ -174,15 +175,17 @@ blank_column:
 	rts
 
 | ---------------------------------------------------------------------------
-| Plane text (menus, level messages, game over). Replaces 0x9F6A(str), which
-| wrote one name-table word per character at the VDP address the caller had
-| just set. Every caller's control-port write is redirected to a set_cmd_*
-| stub that records the address in PT_CMD and selects a mode:
-|   0  legacy: original one-row 8x8 font (in-game HUD, present list)
+| Plane text (menus, HUD, level messages). Replaces 0x9F6A(str), which wrote
+| one name-table word per character at the VDP address the caller had just
+| set. Every caller's control-port write is redirected to a set_cmd_* stub
+| that records the address in PT_CMD and selects a mode:
+|   0  HUD: one row of 8x8 tiles. ASCII uses the original font already in
+|      VRAM (via 0x9E0E); Hangul streams 8x8 glyphs into the HUD8 ring.
 |   1  Korean two-row text, glyph tiles streamed into the menu ring
-|   2  Korean two-row text, glyph tiles streamed into the HUD ring
+|   2  Korean two-row text, glyph tiles streamed into the message ring
+| Mode 0 keeps its own glyph cache so HUD text survives messages.
 | ---------------------------------------------------------------------------
-	.globl	plane_text, menu_begin
+	.globl	plane_text, plane_text_pad13, plane_blank, plane_word_d0, menu_begin
 	.globl	set_cmd_d0_m0, set_cmd_d1_m0, set_cmd_imm_m0
 	.globl	set_cmd_d0_m1, set_cmd_d1_m1, set_cmd_imm_m1
 	.globl	set_cmd_d0_m2, set_cmd_d1_m2, set_cmd_imm_m2
@@ -191,28 +194,35 @@ blank_column:
 	.equ	VDP_CTRL, 0xC00004
 	.equ	CHAR_TO_GLYPH, 0x9E0E	| original ASCII -> 8x8 glyph index
 	.equ	PT_CMD, 0xFFEFE0	| long: shadow of the name-table write command
-	.equ	PT_CURSOR, 0xFFEFE4	| word: next free tile in the ring
-	.equ	PT_MODE, 0xFFEFE6	| byte: see above
-	.equ	PT_COUNT, 0xFFEFE8	| word: glyph cache entries in use
-	.equ	PT_CACHE, 0xFFE800	| CACHE_MAX x (key.w, tile.w)
+	.equ	PT_MODE, 0xFFEFE4	| byte: see above
+	.equ	VARS_KO, 0xFFEFE6	| cursor.w, count.w for modes 1/2
+	.equ	VARS_HUD, 0xFFEFEA	| cursor.w, count.w for mode 0
+	.equ	CACHE_KO, 0xFFE800	| CACHE_MAX x (key.w, tile.w)
+	.equ	CACHE_HUD, 0xFFEB00
 	.equ	PT_ROWBUF, 0xFFEA00	| 64 words top row, then 64 words bottom row
 	.equ	CACHE_MAX, 96
 	.equ	MENU_RING_START, 0x080	| free in menu scenes only
 	.equ	MENU_RING_END, 0x200
-	.equ	HUD_RING_START, 0x480	| top 16 blocks of the sprite VRAM pool,
-	.equ	HUD_RING_END, 0x500	| withheld from the allocator by the build
+	.equ	HUD8_RING_START, 0x400	| blocks 0x30-0x3F of the sprite pool,
+	.equ	HUD8_RING_END, 0x480	| withheld from the allocator by the build
+	.equ	MSG_RING_START, 0x480	| blocks 0x40-0x4F, likewise
+	.equ	MSG_RING_END, 0x500
 	.equ	BLANK_WORD, 0x85B4	| original font tile 0: blank, priority, pal 0
 	.equ	TILE_ATTR, 0x8000
-	.equ	ROW_STEP, 0x800000	| +0x80 bytes of VRAM in the command's address field
+	.equ	COL_STEP, 0x20000	| +2 bytes of VRAM in the command's address field
+	.equ	ROW_STEP, 0x800000	| +0x80 bytes: next name-table row
 	.equ	MENU_DRAW_RESUME, 0x23A4C
+	.equ	PRESENT_FIELD, 13
 
-| Mode switch, register-preserving. A change of mode restarts that mode's ring.
+| Mode switch, register-preserving. Entering mode 1 or 2 restarts its ring.
 .macro	ENTER_MODE mode, start
 	cmpi.b	#\mode,PT_MODE
 	beq	9f
 	move.b	#\mode,PT_MODE
-	move.w	#\start,PT_CURSOR
-	clr.w	PT_COUNT
+.if \mode
+	move.w	#\start,VARS_KO
+	clr.w	VARS_KO+2
+.endif
 9:
 .endm
 
@@ -242,33 +252,84 @@ blank_column:
 	SET_CMD_REG set_cmd_d0_m1, %d0, 1, MENU_RING_START
 	SET_CMD_REG set_cmd_d1_m1, %d1, 1, MENU_RING_START
 	SET_CMD_IMM set_cmd_imm_m1, 1, MENU_RING_START
-	SET_CMD_REG set_cmd_d0_m2, %d0, 2, HUD_RING_START
-	SET_CMD_REG set_cmd_d1_m2, %d1, 2, HUD_RING_START
-	SET_CMD_IMM set_cmd_imm_m2, 2, HUD_RING_START
+	SET_CMD_REG set_cmd_d0_m2, %d0, 2, MSG_RING_START
+	SET_CMD_REG set_cmd_d1_m2, %d1, 2, MSG_RING_START
+	SET_CMD_IMM set_cmd_imm_m2, 2, MSG_RING_START
 
 menu_begin:				| hook at 0x23A44: a menu is being drawn
 	move.b	#1,PT_MODE
-	move.w	#MENU_RING_START,PT_CURSOR
-	clr.w	PT_COUNT
+	move.w	#MENU_RING_START,VARS_KO
+	clr.w	VARS_KO+2
 	movem.l	%d2-%d4/%a2,-(%sp)	| displaced instructions
 	movea.l	0x14(%sp),%a2
 	jmp	MENU_DRAW_RESUME
 
-plane_text:				| 4(sp) = string
+plane_blank:				| replaces move.w #$85B4,$C00000 in HUD code
+	move.w	#BLANK_WORD,VDP_DATA
+	addi.l	#COL_STEP,PT_CMD
+	rts
+
+plane_word_d0:				| replaces move.w d0,$C00000 in HUD code
+	move.w	%d0,VDP_DATA
+	addi.l	#COL_STEP,PT_CMD
+	rts
+
+plane_text_pad13:			| present list: name padded to 13 columns
+	move.l	4(%sp),-(%sp)
+	bsr	plane_text
+	addq.l	#4,%sp
+	move.w	%d0,%d1
+	bra	2f
+1:	move.w	#BLANK_WORD,VDP_DATA
+	addi.l	#COL_STEP,PT_CMD
+	addq.w	#1,%d1
+2:	cmpi.w	#PRESENT_FIELD,%d1
+	blt	1b
+	rts
+
+plane_text:				| 4(sp) = string; returns d0 = columns (mode 0)
 	tst.b	PT_MODE
 	bne	pt_korean
-	move.l	%a2,-(%sp)		| legacy: exactly what 0x9F6A did
-	movea.l	8(%sp),%a2
-	bra	2f
-1:	move.l	%d0,-(%sp)
+	movem.l	%d2-%d7/%a2-%a4,-(%sp)
+	movea.l	0x28(%sp),%a2
+	moveq	#0,%d7
+hud_loop:
+	moveq	#0,%d0
+	move.b	(%a2)+,%d0
+	beq	hud_done
+	bmi	hud_wide
+	move.l	%d0,-(%sp)		| exactly what 0x9F6A did
 	jsr	CHAR_TO_GLYPH
 	addq.l	#4,%sp
 	addi.w	#BLANK_WORD,%d0
 	move.w	%d0,VDP_DATA
-2:	moveq	#0,%d0
-	move.b	(%a2)+,%d0
-	bne	1b
-	movea.l	(%sp)+,%a2
+	addi.l	#COL_STEP,PT_CMD
+	addq.w	#1,%d7
+	bra	hud_loop
+hud_wide:
+	andi.w	#0x7f,%d0
+	mulu	#255,%d0
+	moveq	#0,%d1
+	move.b	(%a2)+,%d1
+	beq	hud_done
+	subq.w	#1,%d1
+	add.l	%d1,%d0
+	move.w	%d0,%d2
+	addi.w	#0x100,%d2		| cache key 0x100 + wide index
+	lsl.l	#5,%d0			| 32 bytes per 8x8 glyph
+	addi.l	#HUD_FONT,%d0
+	moveq	#1,%d1
+	bsr	alloc_glyph
+	move.l	PT_CMD,VDP_CTRL		| the upload moved the write address
+	move.w	%d3,%d0
+	ori.w	#TILE_ATTR,%d0
+	move.w	%d0,VDP_DATA
+	addi.l	#COL_STEP,PT_CMD
+	addq.w	#1,%d7
+	bra	hud_loop
+hud_done:
+	move.w	%d7,%d0
+	movem.l	(%sp)+,%d2-%d7/%a2-%a4
 	rts
 
 pt_korean:
@@ -353,54 +414,65 @@ pt_done:
 	swap	%d1			| into the command's address field
 	add.l	%d1,%d0
 	move.l	%d0,PT_CMD
+	move.w	%d7,%d0
 	movem.l	(%sp)+,%d2-%d7/%a2-%a4
 	rts
 
 | alloc_glyph: d2.w = cache key, d1.w = tile count, d0.l = tile data in ROM.
 | Returns d3.w = first VRAM tile. Uploads the tiles on a cache miss.
+| Uses the cache/ring of the current mode; clobbers a0-a1, d4-d6.
 alloc_glyph:
-	lea	PT_CACHE,%a0
-	move.w	PT_COUNT,%d4
-	subq.w	#1,%d4
+	lea	VARS_HUD,%a0
+	lea	CACHE_HUD,%a1
+	move.w	#HUD8_RING_START,%d5
+	move.w	#HUD8_RING_END,%d4
+	tst.b	PT_MODE
+	beq	1f
+	lea	VARS_KO,%a0
+	lea	CACHE_KO,%a1
+	move.w	#MSG_RING_START,%d5
+	move.w	#MSG_RING_END,%d4
+	cmpi.b	#1,PT_MODE
+	bne	1f
+	move.w	#MENU_RING_START,%d5
+	move.w	#MENU_RING_END,%d4
+1:	move.w	2(%a0),%d6		| cache lookup
+	subq.w	#1,%d6
 	bmi	ag_miss
-1:	cmp.w	(%a0),%d2
+	move.l	%a1,-(%sp)
+2:	cmp.w	(%a1),%d2
 	beq	ag_hit
-	addq.l	#4,%a0
-	dbra	%d4,1b
+	addq.l	#4,%a1
+	dbra	%d6,2b
+	movea.l	(%sp)+,%a1
 	bra	ag_miss
 ag_hit:
-	move.w	2(%a0),%d3
+	move.w	2(%a1),%d3
+	movea.l	(%sp)+,%a1
 	rts
 ag_miss:
-	move.w	PT_CURSOR,%d3
-	move.w	#HUD_RING_END,%d4
-	move.w	#HUD_RING_START,%d5
-	cmpi.b	#1,PT_MODE
-	bne	2f
-	move.w	#MENU_RING_END,%d4
-	move.w	#MENU_RING_START,%d5
-2:	cmp.w	%d5,%d3
-	bhs	7f
-	move.w	%d5,%d3			| cursor below the ring: start over
-7:	move.w	%d3,%d6
-	add.w	%d1,%d6
-	cmp.w	%d4,%d6
-	bls	3f
-	move.w	%d5,%d3			| ring full: wrap and forget the cache
-	clr.w	PT_COUNT
+	move.w	(%a0),%d3		| ring cursor
+	cmp.w	%d5,%d3
+	bhs	3f
+	move.w	%d5,%d3			| never initialised (RAM was zero)
 3:	move.w	%d3,%d6
 	add.w	%d1,%d6
-	move.w	%d6,PT_CURSOR
-	move.w	PT_COUNT,%d4
-	cmpi.w	#CACHE_MAX,%d4
-	bhs	4f
-	lea	PT_CACHE,%a0
-	add.w	%d4,%d4
-	add.w	%d4,%d4
-	move.w	%d2,(%a0,%d4.w)
-	move.w	%d3,2(%a0,%d4.w)
-	addq.w	#1,PT_COUNT
-4:	moveq	#0,%d4			| VRAM write command for tile*32
+	cmp.w	%d4,%d6
+	bls	4f
+	move.w	%d5,%d3			| ring full: wrap and forget the cache
+	clr.w	2(%a0)
+4:	move.w	%d3,%d6
+	add.w	%d1,%d6
+	move.w	%d6,(%a0)
+	move.w	2(%a0),%d6
+	cmpi.w	#CACHE_MAX,%d6
+	bhs	5f
+	add.w	%d6,%d6
+	add.w	%d6,%d6
+	move.w	%d2,(%a1,%d6.w)
+	move.w	%d3,2(%a1,%d6.w)
+	addq.w	#1,2(%a0)
+5:	moveq	#0,%d4			| VRAM write command for tile*32
 	move.w	%d3,%d4
 	lsl.l	#5,%d4
 	move.l	%d4,%d5
@@ -416,6 +488,6 @@ ag_miss:
 	move.w	%d1,%d4
 	lsl.w	#3,%d4			| 8 longs per tile
 	subq.w	#1,%d4
-5:	move.l	(%a1)+,VDP_DATA
-	dbra	%d4,5b
+6:	move.l	(%a1)+,VDP_DATA
+	dbra	%d4,6b
 	rts

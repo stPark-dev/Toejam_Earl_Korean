@@ -35,6 +35,12 @@ BUBBLE_RENDERER = 0x1DED8
 PLANE_TEXT = 0x9F6A          # writes one name-table word per char at a preset VDP address
 MENU_DRAW = 0x23A44          # draws every item of a menu table
 VRAM_ALLOC_LIMIT = 0xD680    # cmpi.w #$50,d3 : number of 8-tile blocks in the sprite pool
+PRESENT_NAMES_ASCII = 0xABDBC   # 27 pointers to "icarus wings " style 13-char names
+PRESENT_NAMES_GLYPH = 0xABBD2   # 28 pointers to the same names pre-mapped to glyph indices
+PRESENT_UNKNOWN_GLYPH = 0xABBC4 # "UN-FALL" pre-mapped
+PRESENT_UNKNOWN_ASCII = 0xA730  # "un-fall ....."
+BONUS_HITOPS_GLYPH = 0xABBB6    # 28th present name exists only pre-mapped
+PRESENT_NAMES_KO = 0x101180     # 28-pointer table the patched present list reads
 
 
 def read_rom(path=ORIGINAL_ROM):

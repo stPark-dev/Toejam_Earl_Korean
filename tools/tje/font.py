@@ -13,8 +13,17 @@ import os
 
 from PIL import Image, ImageDraw, ImageFont
 
-FONT_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "fonts", "Galmuri11.ttf")
-FONT_SIZE = 11
+FONT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "fonts")
+# Hangul: Galmuri14 fills the 16px cell and keeps every vowel stroke visible
+# under the 1px outline (Galmuri11 draws some strokes 1px wide and they vanish).
+WIDE_FONT = (os.path.join(FONT_DIR, "Galmuri14.ttf"), 14, 0)      # path, px, top row
+# ASCII: Galmuri11's Latin glyphs fit the 7 usable columns of a narrow cell.
+NARROW_FONT = (os.path.join(FONT_DIR, "Galmuri11.ttf"), 11, 2)
+# HUD: the in-game panel uses one row of 8x8 tiles, so Hangul there is a
+# 7px Galmuri7 glyph in an 8x8 tile, drawn in the original HUD font's colours.
+HUD_FONT = (os.path.join(FONT_DIR, "Galmuri7.ttf"), 7, 0)
+HUD_BG = 0xF                # opaque box, as the original 8x8 HUD font
+HUD_INK = 0x5
 CELL_H = 16
 NARROW_W = 8
 WIDE_W = 16
@@ -24,27 +33,28 @@ COLOR_INK = 0x8
 NARROW_FIRST = 0x20
 NARROW_COUNT = 95           # 0x20..0x7E
 TILE_BYTES = 32
-GLYPH_Y = 1                 # top of the 11px glyph inside the 16px cell
 
-_font = None
+_fonts = {}
 
 
-def font():
-    global _font
-    if _font is None:
-        _font = ImageFont.truetype(FONT_PATH, FONT_SIZE)
-    return _font
+def font(wide):
+    spec = WIDE_FONT if wide else NARROW_FONT
+    if spec not in _fonts:
+        _fonts[spec] = ImageFont.truetype(spec[0], spec[1])
+    return _fonts[spec]
 
 
 def ink_mask(ch, width):
     """Return a width x CELL_H matrix of 0/1 ink pixels, glyph centred."""
-    f = font()
+    wide = width > NARROW_W
+    f = font(wide)
+    glyph_y = (WIDE_FONT if wide else NARROW_FONT)[2]
     left, top, right, bottom = f.getbbox(ch)
     glyph_w = right - left
     usable = width - 1                      # last column is spacing
     x = max(0, (usable - glyph_w) // 2) - left
     img = Image.new("1", (width, CELL_H), 0)
-    ImageDraw.Draw(img).text((x, GLYPH_Y), ch, font=f, fill=1)
+    ImageDraw.Draw(img).text((x, glyph_y), ch, font=f, fill=1)
     px = img.load()
     rows = [[1 if px[c, r] else 0 for c in range(width)] for r in range(CELL_H)]
     for r in rows:
@@ -116,3 +126,22 @@ def preview(chars, wide, scale=4):
             for c in range(width):
                 img.putpixel((i * width + c, r), pal[cell[r][c]])
     return img.resize((img.width * scale, img.height * scale), Image.NEAREST)
+
+
+def hud_glyph(ch):
+    """One 8x8 tile (32 bytes) for the single-row HUD text."""
+    path, size, top = HUD_FONT
+    if HUD_FONT not in _fonts:
+        _fonts[HUD_FONT] = ImageFont.truetype(path, size)
+    f = _fonts[HUD_FONT]
+    left, _t, right, _b = f.getbbox(ch)
+    x = max(0, (7 - (right - left)) // 2) - left
+    img = Image.new("1", (8, 8), 0)
+    ImageDraw.Draw(img).text((x, top), ch, font=f, fill=1)
+    px = img.load()
+    cell = [[HUD_INK if px[c, r] else HUD_BG for c in range(8)] for r in range(8)]
+    return tile_bytes(cell, 0, 0)
+
+
+def hud_table(chars):
+    return b"".join(hud_glyph(ch) for ch in chars)
