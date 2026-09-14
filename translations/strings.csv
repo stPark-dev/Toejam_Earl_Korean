@@ -1,0 +1,299 @@
+id,en,ko,refs
+00A1A0, pts,,pcrel@00A11E
+00A1A6, pts,,pcrel@00A16E
+00A730,un-fall .....,,pcrel@00A6CC
+00B712, on,,pcrel@00B6AC
+00B716,vacation,,pcrel@00B6C0
+00B720, on,,pcrel@00B6EE
+00B724,vacation,,pcrel@00B702
+020376,rocketship windshield,로켓 앞유리,abs32@0202CE
+02038C,left megawatt speaker,왼쪽 메가와트 스피커,abs32@0202D6
+0203A2,super funkomatic amplamator,슈퍼 펑코매틱 앰플러메이터,abs32@0202DE
+0203BE,amplamator connector fin,앰플러메이터 연결 핀,abs32@0202E6
+0203D8,forward stabilizing unit,전방 안정화 장치,abs32@0202EE
+0203F2,rear leg,뒷다리,abs32@0202F6
+0203FC,awesome snowboard,멋진 스노보드,abs32@0202FE
+02040E,righteous rapmaster capsule,랩마스터 캡슐,abs32@020306
+02042A,right megawatt speaker,오른쪽 메가와트 스피커,abs32@02030E
+020442,hyperfunk thruster,하이퍼펑크 추진기,abs32@020316
+020570,Rocketship piece on this level,이 층에 로켓 부품이 있다,pcrel@0204C8
+020590,Rocketship piece on toejam's level,토잼의 층에 로켓 부품이 있다,pcrel@0204E0
+0205B4,Rocketship piece on earl's level,얼의 층에 로켓 부품이 있다,pcrel@0204F2
+0205D6,no pieces on this level,이 층에는 부품이 없다,pcrel@020518
+0205EE,no pieces on toejam's level,토잼의 층에는 부품이 없다,pcrel@02052E
+02060A,no pieces on earl's level,얼의 층에는 부품이 없다,pcrel@020540 abs32@08BF96
+020624, missing rocketship pieces, 개의 부품이 남았다,pcrel@020560
+020CBE,Jammin,잼잉,pcrel@020CA4
+0213AE,Mail Order?,통신판매?,pcrel@0211F0
+02167A,Got a buck?,1달러 있어?,pcrel@0214FA
+021872,Got 2 bucks?,2달러 있어?,pcrel@02178E
+021B8C,Got 3 bucks?,3달러 있어?,pcrel@021994
+021F18,Can I play?,같이 할래?,pcrel@021DD2
+021F24,Got a life?,목숨 있어?,pcrel@021DDC
+0235CE,bogus ... game over,이런... 게임 오버,pcrel@0234FA
+023A1E,need two controllers for two players,2인 플레이는 컨트롤러 2개 필요,pcrel@023928
+023D8C,Burp,꺼억,pcrel@023D1A
+02411E,chat,대화,pcrel@023F80
+024124,giggle,킥킥,pcrel@023FD2
+02412C,titter,히히,pcrel@023FE2
+024134,chat,대화,pcrel@024014
+02413A,giggle,킥킥,pcrel@02406E
+024142,titter,히히,pcrel@02407A
+02418A,no accompaniment,반주 없음,abs32@02414C
+02419B,song 1 - toejam jammin,1곡 - 토잼 잼잉,abs32@024154
+0241B2,song 2 - big earl bump,2곡 - 빅 얼 범프,abs32@02415C
+0241C9,song 3 - rapmaster rocket racket,3곡 - 랩마스터 로켓 라켓,abs32@024164
+0241EA,song 4 - funkotronic beat,4곡 - 펑코트로닉 비트,abs32@02416C
+024204,song 5 - alien break down,5곡 - 에일리언 브레이크다운,abs32@024174
+02421E,song 6 - toejam slowjam,6곡 - 토잼 슬로우잼,abs32@02417C
+024236,crazy sounds,이상한 소리,abs32@024184
+02425E,Two Player -- Toejam an' Earl,2인용 -- 토잼과 얼,abs32@024248
+02427C,One Player -- jus' Toejam,1인용 -- 토잼만,abs32@024250
+024296,One Player -- jus' Earl,1인용 -- 얼만,abs32@024258
+0242D8,Play New Game -- Random World,새 게임 -- 랜덤 월드,abs32@0242B2
+0242F6,Jam Out,잼 아웃,abs32@0242BA
+0242FE,show intro again,인트로 다시 보기,abs32@0242C2
+02430F,controller options,컨트롤러 설정,abs32@0242CA
+024322,Play New Game -- Fixed World,새 게임 -- 고정 월드,abs32@0242D2
+024372,standard    A....Action,표준        A....행동,abs32@024344
+02438A,B....Present List,B....선물 목록,abs32@024354 abs32@024364
+02439C,C....Map,C....지도,abs32@02435C
+0243A5,variation   A....Map,변형        A....지도,abs32@02434C
+0243BA,C....Action,C....행동,abs32@02436C
+026890,achoo,에취!,abs32@0265DA abs32@02687A
+026896,gesundheit,몸조심!,abs32@0265E0 abs32@026880
+0268A1,yo earl,야 얼,abs32@0265E6
+0268A9,wha'sup,별일 없어?,abs32@0265EC abs32@02679C abs32@02683E
+0268B1,jammin!,잼잉!,abs32@0265F2 abs32@02672A abs32@0267F0
+0268B9,"yeah, jammin","그래, 잼잉",abs32@0265F8
+0268C6,c'mon earl,가자 얼,abs32@0265FE
+0268D1,i'm commin',가고 있어,abs32@026604
+0268DD,where am i?,여기 어디야?,abs32@02660A
+0268E9,get a clue!,정신 차려!,abs32@026610
+0268F5,ick,으,abs32@0266A6 abs32@0266B2
+0268F9,yuck!,우웩!,abs32@02669A abs32@0266BE
+0268FF,gross!!,더러워!!,abs32@0266CA
+026907,not bad,괜찮네,abs32@02663A abs32@02665E abs32@02666A abs32@02668E
+02690F,yumm!,냠냠!,abs32@026646 abs32@026652 abs32@026676 abs32@026682
+026915,wow!!,우와!!,abs32@026616 abs32@026622 abs32@02662E
+02691B,a hamburger,햄버거,abs32@02661C
+026927,fudge sundae,퍼지 선데,abs32@026628
+026934,fudge cake,퍼지 케이크,abs32@026634
+02693F,candy cane,사탕 막대,abs32@026640
+02694A,fries,감자튀김,abs32@02664C
+026950,pancakes,팬케이크,abs32@026658
+026959,watermelon,수박,abs32@026664
+026964,bacon'n eggs,베이컨 에그,abs32@026670
+026971,cherry pie,체리 파이,abs32@02667C
+02697C,pizza,피자,abs32@026688
+026982,cereal,시리얼,abs32@026694
+026989,fish bones,물고기 뼈,abs32@0266A0
+026994,moldy cheese,썩은 치즈,abs32@0266AC
+0269A1,moldy bread,썩은 빵,abs32@0266B8
+0269AD,slimy fungus,끈적 곰팡이,abs32@0266C4
+0269BA,old cabbage,썩은 양배추,abs32@0266D0
+0269C6,alright,좋아,abs32@0266D6 abs32@026736
+0269CE,a buck,1달러,abs32@0266DC
+0269D5,toejam,토잼,abs32@0266EE abs32@026868
+0269DC,earl,얼,abs32@0266E2 abs32@02685C
+0269E1,i love you,사랑해,abs32@0266E8 abs32@0266F4
+0269EC,ahhh,아아,abs32@0266FA
+0269F1,rootbeer,루트비어,abs32@026700
+0269FA,oops...,이런...,abs32@026706
+026A02,too_many,너무 많아,abs32@025CCC abs32@02670C
+026A0B,yeah!,좋았어!,abs32@026712
+026A11,tomatoes,토마토,abs32@026718
+026A1A,cool!,멋져!,abs32@02671E
+026A20,slingshot,새총,abs32@026724
+026A2A,super hitops,슈퍼 하이탑,abs32@026730
+026A37,another buck,1달러 더,abs32@02673C
+026A44,jackpot,잭팟,abs32@026742
+026A4C,five bucks,5달러,abs32@026748
+026A57,welcome home,어서 와,abs32@026826
+026A64,it's time,이제,abs32@02674E
+026A6E,to party!,파티 시간!,abs32@026754
+026A78,no hedgehogs,고슴도치는,abs32@02675A
+026A85,'round here,사절이야,abs32@026760
+026A91,welcome back,돌아왔구나,abs32@026766
+026A9E,my hero!,나의 영웅!,abs32@026772
+026AA7,hurrah!!,만세!!,abs32@026778
+026AB0,lookin good!,멋진데!,abs32@02677E
+026ABD,most,정말,abs32@02678A
+026AC2,impressive!,인상적이야!,abs32@026790
+026ACE,yo cuz,야 친구,abs32@026796
+026AD5,hey where's,야 내 돈은,abs32@0267A2
+026AE1,my money??,어디 있어??,abs32@0267A8
+026AEC,what did you,나한테 뭘,abs32@0267AE
+026AF9,bring me?,가져왔어?,abs32@0267B4
+026B03,trixie is,트릭시가,abs32@0267BA
+026B0D,waiting...,기다려...,abs32@0267C0
+026B18,trixie's,트릭시의,abs32@0267C6
+026B21,island,섬,abs32@0267CC
+026B28,oh rapturous,오 황홀한,abs32@0267D2
+026B35,jubilation,환희여,abs32@0267D8
+026B40,happy days,행복한 날이,abs32@0267DE
+026B57,definitely,확실히,abs32@0267EA
+026B62,you made it!,해냈구나!,abs32@0267F6
+026B6F,youre,넌,abs32@026802
+026B75,famous!,유명인이야!,abs32@026808
+026B7D,jolly good,아주 멋진,abs32@02680E
+026B88,show!,쇼였어!,abs32@026814
+026B8E,oh i've been,아 나 정말,abs32@02681A
+026B9B,so lonely...,외로웠어...,abs32@026820
+026BA8,brak,꽥,abs32@026832 abs32@026838
+026BAD,i'm gonna,나 이제,abs32@02684A
+026BB7,faint,기절해,abs32@026850
+026BBD,get a belt,벨트 좀 사,abs32@026856
+026BC8,bust a move,춤 좀 춰봐,abs32@026862
+026BD4,make a wish,소원을 빌어,abs32@02686E
+026BE0,what took,왜 이렇게,abs32@026886
+026BEA,you so long?,오래 걸렸어?,abs32@02688C
+026BF7,"Earl, you're","얼, 너 내",abs32@026DDC
+026C04,on my foot!,발 밟았어!,abs32@01BD58 abs32@026DE0
+026C10,am not,아니야,abs32@026DE4
+026C17,move over,저리 가,abs32@026DEC
+026C21,earl,얼,abs32@026DF0
+026C26,no.. the,아니.. 저,abs32@026DF4
+026C2F,other way!!,반대쪽!!,abs32@026DF8
+026C3B,what's that,이게 무슨,abs32@026DFC
+026C47,smell?,냄새야?,abs32@026E00
+026C4E,wasn't me,나 아니야,abs32@026E04
+026C58,Oops!!,이런!!,abs32@026E0C
+026C5F,"oh, get a","아, 벨트나",abs32@026E14
+026C69,belt earl!,사 얼!,abs32@026E18
+026C74,this planet,이 행성은,abs32@026E1C
+026C80,is insane!,미쳤어!,abs32@026E20
+026C8B,"yeah, insane","그래, 미쳤어",abs32@026E24
+026C98,This is,이건,abs32@026E2C
+026CA0,no problem.,문제없어.,abs32@026E30
+026CAC,no problem.,문제없어.,abs32@026E34
+026CB8,burp!,꺼억!,abs32@026E3C
+026CBE,I feel sick.,속이 안 좋아,abs32@026E40
+026CCB,oh great!,오 좋아!,abs32@026E44
+026CD5,It's dark.,어두워.,abs32@026E4C
+026CE0,I'm scared.,무서워.,abs32@026E50
+026CEC,Get a clue,정신 차려,abs32@026E54
+026CF7,earl.,얼.,abs32@026E58
+026CFD,"Funkotron,","펑코트론,",abs32@026E5C
+026D08,here we come,우리가 간다,abs32@026E60
+026D15,"yeah,","그래,",abs32@026E64
+026D1B,here we come,우리가 간다,abs32@026E68
+026D28,Want a bite?,좀 먹을래?,abs32@026E6C
+026D35,Where'd you,그거 어디서,abs32@026E74
+026D41,get that?,얻었어?,abs32@026E78
+026D4B,"Earl, we are","얼, 우리는",abs32@026E7C
+026D58,jammin.,잼잉 중.,abs32@026E80
+026D60,"yeah, jammin","그래, 잼잉",abs32@026E84
+026D6D,"yo, homeboy","야, 친구",abs32@026E8C
+026D79,gimme five!,하이파이브!,abs32@026E90
+026D85,alright!!,좋아!!,abs32@026E94
+026D8F,stop writing,벽에 낙서,abs32@026E9C
+026D9C,on the walls,하지 마,abs32@026EA0
+026DA9,ok..,알았어..,abs32@026EA4
+026DAE,I'm sorry,미안해,abs32@026EA8
+026DB8,what's this,이 버튼은,abs32@00555A abs32@026EAC
+026DC4,button do?,뭐지?,abs32@026EB0
+026DCF,Earl!!!,얼!!!,abs32@026EB4
+02A1E6,"Greetings,","안녕,",pcrel@029DC4
+02A1F2,My name is Toejam.,내 이름은 토잼.,pcrel@029DE6
+02A206,And this here is my Bro,그리고 여기 이 친구는,pcrel@029E38
+02A21E,Big Rappin Earl.,빅 래핑 얼.,pcrel@029E48
+02A230,"Yo, Wha'sup.","요, 별일 없지.",pcrel@029EBA
+02A23E,Earl and myself are,얼과 나는,pcrel@029EFE
+02A252,highly funky aliens,아주 펑키한 외계인이야,pcrel@029F0E
+02A266,from outer space.,우주에서 왔지.,pcrel@029FB8
+02A278,Outer Space.,우주.,pcrel@029FDA
+02A286,"More specifically,","더 정확히 말하면,",pcrel@02A018
+02A29A,we are from,우리는,pcrel@02A074
+02A2A6,the Planet Funkotron.,펑코트론 행성에서 왔어.,pcrel@02A084
+02A2BC,FUNKOTRON!,펑코트론!,pcrel@02A0BC
+02A2C8,Thank-you Earl.,고마워 얼.,pcrel@02A0EE
+02A2D8,Check this out -,이거 봐 -,pcrel@02A14A
+02A4B6,"This is our highly funky,","이건 우리의 아주 펑키하고,",pcrel@02A39C
+02A4D0,"Ultra Cool,","울트라 쿨한,",pcrel@02A3B4
+02A4DC,Righteous Rapmaster Rocketship.,랩마스터 로켓선이야.,pcrel@02A3C6
+02A4FC,Notice the Megawatt Speakers,메가와트 스피커를 봐,pcrel@02A3D6
+02A51A,With which Earl and I,얼과 내가 이걸로,pcrel@02A3EE
+02A530,have been known to crank out,엄청 펑키한 곡들을,pcrel@02A3FE
+02A54E,some extremely funky tunes.,쾅쾅 울려 왔지.,pcrel@02A40E
+02A56A,Crank it Earl!,틀어 봐 얼!,pcrel@02A428
+02A7AC,"Recently, we ran into",최근에 우리는,pcrel@02A69A
+02A7C2,a small problem,작은 문제를 만났어,pcrel@02A6AE
+02A7D2,Problem.,문제.,pcrel@02A716
+02AA14,"We were cruisin in our Rocket,","우린 로켓을 타고 날면서,",pcrel@02A944
+02AA34,"Thumpin out a funky beat,","펑키한 비트를 울리고 있었지,",pcrel@02A95E
+02AA4E,When big Earl said,그때 빅 얼이,pcrel@02A96E
+02AA62,he'd like a shot,한 번 운전해,pcrel@02A982
+02AA74,in the driver's seat . . .,보고 싶다고 했어 . . .,pcrel@02A9A0
+02B6FE,you should never let earl drive,얼한테 운전을 맡기면 안 돼,pcrel@02B676
+02BC74,"Yo, so here we are","요, 그래서 우리는",pcrel@02B876
+02BC88,chillin' out on,은하계에서 가장,pcrel@02B8B6
+02BC98,the most insane planet,이상한 행성에서,pcrel@02B8C6
+02BCB0,in the Galaxy.,놀고 있어.,pcrel@02B91C
+02BCC0,Planet Earth!,지구라는 행성!,pcrel@02B932
+02BCCE,thanks to earl . . .,얼 덕분에 . . .,pcrel@02B972
+02BCE4,"All we have to do now,","이제 우리가 할 일은,",pcrel@02BA58
+02BCFC,is find the 10 pieces,로켓 부품 10개를,pcrel@02BA82
+02BD12,"of our Rocketship,","찾는 거야,",pcrel@02BA92
+02BD26,and we can,그러면 여기서,pcrel@02BB10
+02BD32,Jet Outta here.,뜰 수 있어.,pcrel@02BB20
+02BD42,no problem.,문제없어.,pcrel@02BB56
+02BD4E,no problem.,문제없어.,pcrel@02BBCC
+037964,we did it,우리가 해냈어,pcrel@0376BE
+03796E,i did it,내가 해냈어,pcrel@0376CE
+037978,crank it earl!,틀어 봐 얼!,pcrel@0377D2
+037988, crank it!,틀어 봐!,pcrel@0377E2
+037B80,Can I drive?,내가 운전할까?,pcrel@037AB6
+037B8E,No!,안 돼!,pcrel@037B1C
+037E9A,game design -- greg johnson,게임 디자인 -- greg johnson,pcrel@037D14
+037EB6,game program -- mark voorsanger,프로그래밍 -- mark voorsanger,pcrel@037D24
+037ED6,additional programming         ,추가 프로그래밍,pcrel@037D46
+037EF6,             -- robert leyland,-- robert leyland,pcrel@037D56
+037F16,music direction -- mark miller,음악 감독 -- mark miller,pcrel@037D74
+037F36,music composition -- john baker,작곡 -- john baker,pcrel@037D84
+037F56,artwork -- greg johnson,아트 -- greg johnson,pcrel@037D96
+037F6E,           avril harrison,avril harrison,pcrel@037DA6
+037F88,sound fx -- robert leyland,효과음 -- robert leyland,pcrel@037DB8
+037FA4,            mark miller ,mark miller,pcrel@037DC8
+037FBE,invaluable aid -- paul reiche,소중한 도움 -- paul reiche,pcrel@037DDC
+037FDC,                  fred ford,fred ford,pcrel@037DEC
+037FF8,producer -- scott berfield,프로듀서 -- scott berfield,pcrel@037E0C
+038014,awesome support -- hugh bowen,든든한 지원 -- hugh bowen,pcrel@037E1C
+038032,a johnson-voorsanger production,johnson-voorsanger 제작,pcrel@037E32
+03AB8E,press and hold start to exit,나가려면 START를 길게 누르세요,pcrel@03A950
+0A9F48,wiener,,abs32@0A9F82
+0A9F4F,dufus,,abs32@0A9F86
+0A9F55,pnr,,abs32@0A9F8A
+0A9F5B,peanut,,abs32@0A9F8E
+0A9F62,dude,,abs32@0A9F92
+0A9F67,bro,,abs32@0A9F96
+0A9F6B,homey,,abs32@0A9F9A
+0A9F71,rar,,abs32@0A9F9E
+0A9F77,fl,,abs32@0A9FA2
+0A9F7C,goner,,abs32@0A9FA6
+0ABC42,icarus wings ,,abs32@0ABDBC
+0ABC50,spring shoes ,,abs32@0ABDC0
+0ABC5E,innertube ...,,abs32@0ABDC4
+0ABC6C,tomatoes ....,,abs32@0ABDC8
+0ABC7A,sling shot ..,,abs32@0ABDCC
+0ABC88,rocket skates,,abs32@0ABDD0
+0ABC96,rose bushes .,,abs32@0ABDD4
+0ABCA4,super hitops ,,abs32@0ABDD8
+0ABCB2,doorway .....,,abs32@0ABDDC
+0ABCC0,food ........,,abs32@0ABDE0
+0ABCCE,rootbeer ....,,abs32@0ABDE4
+0ABCDC,promotion ...,,abs32@0ABDE8
+0ABCEA,togetherness ,,abs32@0ABDEC
+0ABCF8,rain cloud ..,,abs32@0ABDF0
+0ABD06,fudge sundae ,,abs32@0ABDF4
+0ABD14,decoy .......,,abs32@0ABDF8
+0ABD22,total bummer!,,abs32@0ABDFC
+0ABD30,extra life ..,,abs32@0ABE00
+0ABD3E,randomizer ..,,abs32@0ABE04
+0ABD4C,telephone ...,,abs32@0ABE08
+0ABD5A,extra buck ..,,abs32@0ABE0C
+0ABD68,jackpot .....,,abs32@0ABE10
+0ABD76,tomato rain .,,abs32@0ABE14
+0ABD84,earthling ...,,abs32@0ABE18
+0ABD92,school book .,,abs32@0ABE1C
+0ABDA0,boombox .....,,abs32@0ABE20

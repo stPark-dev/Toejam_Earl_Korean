@@ -1,1 +1,77 @@
-# Toejam_Earl_Korean
+# 토잼 & 얼 한글화 (ToeJam & Earl Korean)
+
+<p align="center">
+  <img src="홀이와뚱이.png" alt="토잼 & 얼 한국 정발판 패키지" width="480">
+</p>
+
+메가드라이브용 **ToeJam & Earl (U) REV00** 을 한글화하는 프로젝트입니다.
+1991년 세가와 Johnson Voorsanger Productions가 만든 이 게임은 펑코트론 행성에서 온 두 외계인,
+토잼과 얼이 추락한 지구에서 로켓선 부품 10개를 찾아 모으는 액션 게임입니다.
+
+## 이름에 대하여
+
+이 게임은 예전에 국내에 **「홀이와 뚱이」** 라는 이름으로 정식 발매되었습니다.
+빨갛고 홀쭉한 토잼이 "홀이", 주황색에 몸집이 큰 얼이 "뚱이"였던 셈입니다.
+그때를 기억하는 분들께는 정겨운 이름이지만, 이 한글화에서는 원문의 랩·펑크 분위기와
+캐릭터 이름을 살리기 위해 **토잼 & 얼**로 옮겼습니다. 위 패키지 이미지에도 보이듯
+토잼 & 얼 표기 역시 국내에 소개된 적이 있어 낯설지는 않을 겁니다.
+
+## 현재 상태
+
+| 항목 | 상태 |
+|------|------|
+| 인트로 스토리 | 한글 |
+| 캐릭터 대사(말풍선) | 한글 |
+| 메뉴, 사운드 테스트, 옵션 | 한글 |
+| 로켓 부품 이름, 레벨 시작 메시지, 게임 오버 | 한글 |
+| 크레딧 | 한글(사람 이름은 원문) |
+| 하단 HUD(등급, 휴가 중, 선물 이름) | 영어 원본 유지 |
+| 타이틀 로고 등 그림 문자 | 미착수 |
+
+하단 HUD는 8픽셀 3줄짜리 패널이어서 16픽셀 한글이 들어가지 않아 원본 폰트를 그대로 둡니다.
+
+## 기술 개요
+
+- 게임 텍스트는 세 가지 경로로 출력됩니다. 스프라이트 스트립(인트로, 아이템), 말풍선(대사),
+  배경 플레인(메뉴, HUD, 메시지). 세 경로의 글리프 렌더러를 모두 새 68000 코드로 교체했습니다
+  (`tools/tje/asm/text.s`, ROM 확장 영역 0x100000에 배치).
+- 한글은 16x16, 영문은 8x16 글리프입니다. 폰트는 [Galmuri11](https://github.com/quiple/galmuri)(SIL OFL)에
+  원본과 같은 흰 외곽선을 더해 만들었습니다.
+- 한글 한 글자는 2바이트 코드(리드 `0x80|hi`, 트레일 `1..255`)로 저장되며, 번역에 실제로 쓰인
+  음절만 글리프 테이블에 들어갑니다.
+- ROM은 1MB에서 2MB로 확장되고 헤더 체크섬을 다시 계산합니다.
+
+## 빌드
+
+```bash
+python3 -m venv venv && venv/bin/pip install capstone pytest   # Pillow는 시스템 패키지 사용
+# m68k 어셈블러: apt install binutils-m68k-linux-gnu (또는 .deb를 받아 dpkg -x 로 풀어 M68K_BIN 지정)
+venv/bin/python -m tools.tje.build        # -> build/tje_ko.gen
+venv/bin/python -m pytest tests
+```
+
+원본 ROM `Toejam & Earl (U) (REV00) [!].gen`(MD5 `0a6af20d9c5b3ec4e23c683f083b92cd`)이 저장소 루트에 있어야 합니다.
+
+## 번역 수정
+
+`translations/strings.csv`의 `ko` 열을 고치고 다시 빌드하면 반영됩니다.
+
+- 말풍선 대사: 최대 12열(한글 6자)
+- 그 외: 최대 32열(한글 16자)
+- 한글은 2열, 영문·숫자·기호는 1열로 계산합니다. 초과하면 빌드가 실패하며 해당 줄을 알려줍니다.
+
+## 검증
+
+`tools/emu/harness.py`는 Genesis Plus GX libretro 코어를 파이썬에서 직접 구동해 헤드리스로
+스크린샷·RAM·VRAM 상태를 뽑습니다. 코어 파일 `tools/emu/genesis_plus_gx_libretro.so`는
+[libretro buildbot](https://buildbot.libretro.com/nightly/linux/x86_64/latest/)에서 받아 넣으세요.
+
+```bash
+venv/bin/python tools/emu/harness.py build/tje_ko.gen --frames 1800 --press 900:start --shot 1800:intro.png
+```
+
+## 라이선스
+
+이 저장소의 도구와 번역 텍스트는 자유롭게 사용할 수 있습니다. 게임 자체의 저작권은 세가에 있으며,
+원본 ROM은 직접 소유한 카트리지에서 추출한 것을 사용하세요. Galmuri 폰트는 SIL Open Font License를 따릅니다
+(`tools/tje/fonts/LICENSE.txt`).
