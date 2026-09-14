@@ -130,13 +130,24 @@ def test_plane_text_hooks(sample_rom, original):
             assert sample_rom[site + 6:site + 8] == original[site + 6:site + 8]
 
 
-def test_sprite_vram_pool_is_shrunk_for_hud_glyphs(sample_rom):
+def test_sprite_vram_pool_is_shrunk_for_message_glyphs(sample_rom):
     from tools.tje.rom import VRAM_ALLOC_LIMIT
-    assert sample_rom[VRAM_ALLOC_LIMIT:VRAM_ALLOC_LIMIT + 4] == b"\x0c\x43\x00\x30"
+    assert sample_rom[VRAM_ALLOC_LIMIT:VRAM_ALLOC_LIMIT + 4] == b"\x0c\x43\x00" + bytes((build.POOL_BLOCKS,))
 
 
-def test_present_list_reads_korean_name_table(original):
+def test_hud_strings_stay_english_while_hud_korean_is_off(original):
+    assert not build.HUD_KOREAN
+    rom = build.build({"0A9F48": "위너", "0ABC42": "이카루스 날개", "0ABBB6": "보너스 하이탑"}, original)
+    assert rom[0xA9F48:0xA9F4E] == b"wiener"
+    assert rom[0xA536:0xA556] == original[0xA536:0xA556]        # present-name loop untouched
+    assert rom[0xABBB6:0xABBC3] == original[0xABBB6:0xABBC3]    # pre-mapped glyph string intact
+    for site in build.BLANK_HOOKS:
+        assert rom[site:site + 8] == original[site:site + 8]
+
+
+def test_present_list_reads_korean_name_table(original, monkeypatch):
     from tools.tje.rom import PRESENT_NAMES_ASCII, PRESENT_NAMES_KO, PRESENT_UNKNOWN_ASCII
+    monkeypatch.setattr(build, "HUD_KOREAN", True)
     rom = build.build({"0ABC42": "이카루스 날개", "0ABBB6": "보너스 하이탑"}, original)
     assert struct.unpack_from(">I", rom, 0xA52C + 2)[0] == PRESENT_NAMES_KO
     assert struct.unpack_from(">I", rom, 0xA51E + 2)[0] == PRESENT_UNKNOWN_ASCII
@@ -152,11 +163,13 @@ def test_present_list_reads_korean_name_table(original):
         build.build({"0ABC42": "열세 열을 넘는 선물 이름"}, original)
 
 
-def test_hud_blank_and_word_hooks(sample_rom):
+def test_hud_blank_and_word_hooks(original, monkeypatch):
+    monkeypatch.setattr(build, "HUD_KOREAN", True)
+    rom = build.build({}, original)
     for site in build.BLANK_HOOKS:
-        assert sample_rom[site:site + 2] == b"\x4e\xb9" and sample_rom[site + 6:site + 8] == b"\x4e\x71"
+        assert rom[site:site + 2] == b"\x4e\xb9" and rom[site + 6:site + 8] == b"\x4e\x71"
     for site in build.WORD_HOOKS_D0:
-        assert sample_rom[site:site + 2] == b"\x4e\xb9"
+        assert rom[site:site + 2] == b"\x4e\xb9"
 
 
 def test_text_strip_piece_lists_and_fixup(sample_rom, original):
