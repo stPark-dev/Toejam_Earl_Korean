@@ -219,3 +219,23 @@ def test_hud_glyph_uploads_go_through_the_staging_queue(original):
     hud = code[symbols["plane_text"]:symbols["pt_korean"]]
     assert b"\x00\xc0\x00\x04" not in hud                       # no $C00004 writes
     assert b"\x4e\xb9\x00\x00\xca\xfc" in code[symbols["stage_glyph"]:symbols["flush_pending"]]
+
+
+def test_graphic_labels_are_rewritten(sample_rom, original):
+    from tools.tje import labels
+    for label in labels.DEFERRED_LABELS:          # untouched until the copy routine is handled
+        for idx in label.rows[0]:
+            at = label.asset + idx * 32
+            assert sample_rom[at:at + 32] == original[at:at + 32]
+    for label in labels.LABELS:
+        tiles = labels.render_label(label)
+        for idx, data in tiles.items():
+            at = label.asset + idx * 32
+            assert sample_rom[at:at + 32] == data
+            assert any(original[at:at + 32])
+        nibbles = {b >> 4 for d in tiles.values() for b in d} | {b & 15 for d in tiles.values() for b in d}
+        allowed = {label.bg, label.ink} | ({label.outline} if label.outline is not None else set())
+        assert nibbles <= allowed
+    # the shared tile 31 stays a plain background so "얼은" is not followed by a stray glyph
+    at = labels.HUD_ASSET + 28 * 32
+    assert sample_rom[at:at + 32] == bytes([0xDD]) * 32

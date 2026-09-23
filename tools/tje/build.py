@@ -16,7 +16,7 @@ import struct
 import subprocess
 import tempfile
 
-from . import encode, font, strings
+from . import encode, font, labels, strings
 from .rom import (BONUS_HITOPS_GLYPH, BUBBLE_PRINT, BUBBLE_RENDERER, GLYPH_RENDERERS,
                   MENU_DRAW, ORIGINAL_MD5, ORIGINAL_ROM, PLANE_TEXT, PRESENT_NAMES_ASCII,
                   PRESENT_NAMES_GLYPH, PRESENT_NAMES_KO, PRESENT_UNKNOWN_ASCII,
@@ -279,6 +279,18 @@ def add_present_table_refs(rom, entries):
             entry.refs.append(strings.Ref(PRESENT_NAMES_KO + targets[entry.addr] * 4, "abs32"))
 
 
+def patch_labels(rom):
+    """Overwrite graphic text tiles (HUD labels, present-list title) with Korean."""
+    for label in labels.LABELS:
+        if labels.columns_needed(label) > len(label.rows[0]):
+            raise BuildError(f"label {label.text!r} needs more tiles than it has")
+        for idx, data in labels.render_label(label).items():
+            at = label.asset + idx * 32
+            if not any(rom[at:at + 32]):
+                raise BuildError(f"label tile {idx} of asset {label.asset:06X} is empty; wrong slot?")
+            rom[at:at + 32] = data
+
+
 def patch_line_spacing(rom):
     """Move the y immediates of stacked two-line texts apart."""
     for site, (old, new) in LINE_SPACING.items():
@@ -368,6 +380,8 @@ def build(translations, original=None):
         patch_present_list(rom, symbols)
         add_present_table_refs(rom, entries)
     patch_line_spacing(rom)
+    if HUD_KOREAN:
+        patch_labels(rom)
     rom[BLANK_ADDR:BLANK_ADDR + 64] = bytes(64)
     narrow = font.narrow_table()
     assert NARROW_ADDR + len(narrow) <= WIDE_ADDR

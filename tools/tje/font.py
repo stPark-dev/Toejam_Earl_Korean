@@ -53,6 +53,10 @@ def font(wide):
     return _fonts[spec]
 
 
+def is_narrow(ch):
+    return 0x20 <= ord(ch) < 0x7F
+
+
 def jitter(ch):
     """Deterministic 0/1 px drop per character (Python's hash is randomised)."""
     return (ord(ch) * 2654435761 >> 7) & 1 if JITTER else 0
