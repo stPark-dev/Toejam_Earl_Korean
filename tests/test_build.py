@@ -219,6 +219,20 @@ def test_hud_glyph_uploads_go_through_the_staging_queue(original):
     assert b"\x4e\xb9\x00\x00\xca\xfc" in code[symbols["stage_glyph"]:symbols["flush_pending"]]
 
 
+def test_bubble_strip_carries_both_tile_and_column_counts():
+    """`|` is a comment in gas: BUBBLE_STRIP must still hold 12 in its low word.
+
+    With a zero column count the bubble skips its padding, stages fewer tiles
+    than it queues and leaves stale VRAM after the text (and desyncs the DMA
+    queue for every strip behind it).
+    """
+    code, symbols = build.assemble(build.NARROW_ADDR, build.WIDE_ADDR, 0x110000, build.BLANK_ADDR)
+    entry = code[symbols["render_bubble"]:symbols["render_body"]]
+    at = entry.find(b"&<")                            # move.l #imm,d3
+    assert at >= 0
+    assert struct.unpack_from(">HH", entry, at + 2) == (25, 12)
+
+
 def test_graphic_labels_are_rewritten(sample_rom, original):
     from tools.tje import labels
     for label in labels.DEFERRED_LABELS:          # untouched until the copy routine is handled

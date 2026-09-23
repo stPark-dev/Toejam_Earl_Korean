@@ -22,7 +22,10 @@
 	.equ	QUEUE_COUNT, 0xFFD92E
 	.equ	QUEUE, 0xFFD8DC
 	.equ	PIECE_LIST_SIZE, 84
-	.equ	BUBBLE_STRIP, (25 << 16) | 12	| tiles queued : columns
+	| tiles queued : columns. NOTE: `|` starts a comment in gas, so the low
+	| word must be added, not or-ed -- `(25 << 16) + 12` silently assembles
+	| as 25 << 16 and leaves the bubble with a column count of zero.
+	.equ	BUBBLE_STRIP, (25 << 16) + 12
 	| Strip cache: the game re-prints visible text every frame. A strip whose
 	| string, width and VRAM slot match an entry made since the last VRAM
 	| allocation is still in VRAM, so staging and DMA are skipped.
