@@ -5,10 +5,10 @@ id,en,ko,refs
 00A1A0, pts,점,pcrel@00A11E
 00A1A6, pts,점,pcrel@00A16E
 00A730,un-fall .....,미확인,pcrel@00A6CC
-00B712, on, 휴가,pcrel@00B6AC
-00B716,vacation,   중,pcrel@00B6C0
-00B720, on, 휴가,pcrel@00B6EE
-00B724,vacation,   중,pcrel@00B702
+00B712, on, 휴가 중,pcrel@00B6AC
+00B716,vacation,        ,pcrel@00B6C0
+00B720, on, 휴가 중,pcrel@00B6EE
+00B724,vacation,        ,pcrel@00B702
 00F8B6,Bummer,아쉽네,pcrel@00F888
 0111B2,Bye Toejam,잘 가 토잼,pcrel@011144
 0111BE,Bye Earl,잘 가 얼,pcrel@011154 abs32@0F989A
