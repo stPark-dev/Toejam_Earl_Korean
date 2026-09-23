@@ -209,3 +209,16 @@ def test_internal_branch_to_global_symbol_is_resolved(original):
     assert code[at:at + 2] == b"\x61\x00"             # bsr.w
     disp = struct.unpack_from(">h", code, at + 2)[0]
     assert disp != 0 and at + 2 + disp == symbols["plane_text"]
+
+
+def test_plane_text_uses_its_own_palette_tables(sample_rom):
+    from tools.tje import font
+    wide = encode.collect_wide_chars(["안녕,", "로켓 앞유리"])
+    sprite_tbl = font.wide_table(wide)
+    plane_tbl = font.wide_table(wide, plane=True)
+    assert sample_rom.find(sprite_tbl) == build.WIDE_ADDR
+    plane_at = sample_rom.find(plane_tbl)
+    assert plane_at > build.WIDE_ADDR
+    # the Korean plane renderer must add the plane table address, the sprite one the sprite table
+    assert sample_rom.find(b"\x06\x80" + struct.pack(">I", plane_at), build.CODE_ADDR, build.CODE_ADDR + build.CODE_LIMIT) > 0
+    assert sample_rom.find(b"\x06\x80" + struct.pack(">I", build.WIDE_ADDR), build.CODE_ADDR, build.CODE_ADDR + build.CODE_LIMIT) > 0

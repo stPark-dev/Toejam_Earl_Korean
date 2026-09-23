@@ -30,6 +30,15 @@ WIDE_W = 16
 COLOR_BG = 0x0
 COLOR_OUTLINE = 0xB
 COLOR_INK = 0x8
+# Plane text (menus, level messages) copies tiles verbatim, so it uses the
+# palette of the original 8x8 menu font: yellow ink, brown shade, black box.
+PLANE_BG = 0xF
+PLANE_SHADE = 0x8
+PLANE_INK = 0x5
+# Style: thicken strokes to 2px and let each glyph sit 0 or 1px lower, so
+# lines get the hand-drawn wobble of the original lettering.
+BOLD = True
+JITTER = True
 NARROW_FIRST = 0x20
 NARROW_COUNT = 95           # 0x20..0x7E
 TILE_BYTES = 32
@@ -44,19 +53,26 @@ def font(wide):
     return _fonts[spec]
 
 
+def jitter(ch):
+    """Deterministic 0/1 px drop per character (Python's hash is randomised)."""
+    return (ord(ch) * 2654435761 >> 7) & 1 if JITTER else 0
+
+
 def ink_mask(ch, width):
     """Return a width x CELL_H matrix of 0/1 ink pixels, glyph centred."""
     wide = width > NARROW_W
     f = font(wide)
-    glyph_y = (WIDE_FONT if wide else NARROW_FONT)[2]
+    glyph_y = (WIDE_FONT if wide else NARROW_FONT)[2] + jitter(ch)
     left, top, right, bottom = f.getbbox(ch)
-    glyph_w = right - left
+    glyph_w = right - left + (1 if BOLD else 0)
     usable = width - 1                      # last column is spacing
     x = max(0, (usable - glyph_w) // 2) - left
     img = Image.new("1", (width, CELL_H), 0)
     ImageDraw.Draw(img).text((x, glyph_y), ch, font=f, fill=1)
     px = img.load()
     rows = [[1 if px[c, r] else 0 for c in range(width)] for r in range(CELL_H)]
+    if BOLD:                                # dilate one pixel to the right
+        rows = [[1 if (r[c] or (c and r[c - 1])) else 0 for c in range(width)] for r in rows]
     for r in rows:
         r[width - 1] = 0
     return rows
@@ -98,21 +114,36 @@ def cell_tiles(cell):
     return out
 
 
-def glyph(ch, wide):
+def paint_plane_cell(mask):
+    """Plane-text palette: ink with a 1px drop shadow on an opaque box."""
+    h, w = len(mask), len(mask[0])
+    out = [[PLANE_BG] * w for _ in range(h)]
+    for r in range(h):
+        for c in range(w):
+            if mask[r][c]:
+                out[r][c] = PLANE_INK
+            elif (r and c and mask[r - 1][c - 1]) or (r and mask[r - 1][c]) or (c and mask[r][c - 1]):
+                out[r][c] = PLANE_SHADE
+    return out
+
+
+def glyph(ch, wide, plane=False):
     width = WIDE_W if wide else NARROW_W
     if ch == " ":
         return bytes(TILE_BYTES * (width // 8) * 2)
-    return cell_tiles(paint_cell(ink_mask(ch, width)))
+    mask = ink_mask(ch, width)
+    return cell_tiles(paint_plane_cell(mask) if plane else paint_cell(mask))
 
 
-def narrow_table():
+def narrow_table(plane=False):
     """95 glyphs for ASCII 0x20..0x7E, 64 bytes each."""
-    return b"".join(glyph(chr(c), wide=False) for c in range(NARROW_FIRST, NARROW_FIRST + NARROW_COUNT))
+    return b"".join(glyph(chr(c), wide=False, plane=plane)
+                    for c in range(NARROW_FIRST, NARROW_FIRST + NARROW_COUNT))
 
 
-def wide_table(chars):
+def wide_table(chars, plane=False):
     """128 bytes per glyph in the given order."""
-    return b"".join(glyph(ch, wide=True) for ch in chars)
+    return b"".join(glyph(ch, wide=True, plane=plane) for ch in chars)
 
 
 def preview(chars, wide, scale=4):

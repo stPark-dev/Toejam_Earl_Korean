@@ -71,3 +71,25 @@ def test_hud_glyph_is_one_opaque_tile_with_ink():
     nibbles = {b >> 4 for b in tile} | {b & 15 for b in tile}
     assert nibbles == {font.HUD_BG, font.HUD_INK}
     assert len(font.hud_table(["위", "너"])) == 64
+
+
+def test_bold_widens_strokes_and_stays_inside_cell():
+    cell = font.paint_cell(font.ink_mask("ㅣ", font.WIDE_W))
+    widths = [sum(1 for v in row if v == font.COLOR_INK) for row in cell]
+    assert max(widths) >= 2                       # 1px stem became 2px
+    assert all(row[-1] == 0 for row in cell)
+
+
+def test_jitter_is_deterministic_and_at_most_one_pixel():
+    assert font.jitter("가") == font.jitter("가")
+    assert {font.jitter(ch) for ch in "가나다라마바사아자차카타파하"} == {0, 1}
+    top = lambda ch: min(r for r, row in enumerate(font.ink_mask(ch, font.WIDE_W)) if any(row))
+    assert top("가") - top("나") in (-1, 0, 1)
+
+
+def test_plane_glyph_uses_menu_font_palette():
+    tile = font.glyph("가", wide=True, plane=True)
+    nibbles = {b >> 4 for b in tile} | {b & 15 for b in tile}
+    assert nibbles == {font.PLANE_BG, font.PLANE_INK, font.PLANE_SHADE}
+    assert font.glyph(" ", wide=True, plane=True) == bytes(128)
+    assert len(font.narrow_table(plane=True)) == 95 * 64

@@ -9,8 +9,8 @@
 | staging buffer (8KB) from overflowing.
 | C-style args after the movem (8 regs = 32 bytes + return address):
 |   0x24(sp) string, 0x2A(sp) columns (word), 0x2E(sp) vram tile (word)
-| Symbols NARROW_FONT, WIDE_FONT, HUD_FONT, BLANK_GLYPH, PIECE_LISTS come
-| from --defsym.
+| Symbols NARROW_FONT, WIDE_FONT (sprite palette), NARROW_PLANE, WIDE_PLANE
+| (menu palette), HUD_FONT, BLANK_GLYPH, PIECE_LISTS come from --defsym.
 
 	.text
 	.globl	render_remap, render_raw, render_bubble
@@ -350,7 +350,7 @@ pt_loop:
 	bhi	pt_space
 	move.w	%d0,%d2			| cache key 0..94
 	lsl.l	#6,%d0
-	addi.l	#NARROW_FONT,%d0
+	addi.l	#NARROW_PLANE,%d0
 	moveq	#2,%d1
 	bsr	alloc_glyph
 	move.w	%d3,%d0
@@ -376,7 +376,7 @@ pt_wide:
 	move.w	%d0,%d2
 	addi.w	#0x100,%d2		| cache key 0x100 + wide index
 	lsl.l	#7,%d0
-	addi.l	#WIDE_FONT,%d0
+	addi.l	#WIDE_PLANE,%d0
 	moveq	#4,%d1
 	bsr	alloc_glyph
 	move.w	%d3,%d0

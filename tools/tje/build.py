@@ -7,7 +7,7 @@ Layout of the expansion area (ROM grows from 1MB to 2MB):
   0x101300  narrow (ASCII) font, 95 glyphs x 64 bytes
   0x101180  Korean present-name pointer table (28 entries)
   0x103000  wide (Hangul) font, N glyphs x 128 bytes
-  after     8x8 HUD glyphs (N x 32 bytes), then relocated strings
+  after     8x8 HUD glyphs (N x 32), plane-palette narrow/wide fonts, relocated strings
 """
 import hashlib
 import os
@@ -140,7 +140,7 @@ def piece_lists():
     return b"".join(piece_list(n, flag) for flag in (1, 3) for n in range(1, 9))
 
 
-def assemble(narrow, wide, hud, blank):
+def assemble(narrow, wide, hud, blank, narrow_plane=0, wide_plane=0):
     """Assemble and link text.s at CODE_ADDR; returns (binary, symbols).
 
     Linking matters: gas leaves branches to .globl symbols as relocations,
@@ -153,6 +153,7 @@ def assemble(narrow, wide, hud, blank):
         subprocess.run([toolchain("as"), "-m68000",
                         f"--defsym=NARROW_FONT={narrow}", f"--defsym=WIDE_FONT={wide}",
                         f"--defsym=HUD_FONT={hud}",
+                        f"--defsym=NARROW_PLANE={narrow_plane}", f"--defsym=WIDE_PLANE={wide_plane}",
                         f"--defsym=BLANK_GLYPH={blank}", f"--defsym=PIECE_LISTS={PIECE_LISTS_ADDR}",
                         "-o", obj, ASM_SOURCE], check=True)
         subprocess.run([toolchain("ld"), f"-Ttext={CODE_ADDR:#x}", "-e", "render_remap",
@@ -366,7 +367,11 @@ def build(translations, original=None):
     wide = font.wide_table(wide_chars)
     hud = font.hud_table(wide_chars)
     hud_addr = WIDE_ADDR + len(wide)
-    code, symbols = assemble(NARROW_ADDR, WIDE_ADDR, hud_addr, BLANK_ADDR)
+    narrow_plane = font.narrow_table(plane=True)
+    wide_plane = font.wide_table(wide_chars, plane=True)
+    narrow_plane_addr = hud_addr + len(hud)
+    wide_plane_addr = narrow_plane_addr + len(narrow_plane)
+    code, symbols = assemble(NARROW_ADDR, WIDE_ADDR, hud_addr, BLANK_ADDR, narrow_plane_addr, wide_plane_addr)
     patch_engine(rom, code, symbols)
     patch_plane_text(rom, symbols)
     if HUD_KOREAN:
@@ -380,7 +385,9 @@ def build(translations, original=None):
     rom[NARROW_ADDR:NARROW_ADDR + len(narrow)] = narrow
     rom[WIDE_ADDR:WIDE_ADDR + len(wide)] = wide
     rom[hud_addr:hud_addr + len(hud)] = hud
-    place_strings(rom, entries, translations, wide_map, hud_addr + len(hud))
+    rom[narrow_plane_addr:narrow_plane_addr + len(narrow_plane)] = narrow_plane
+    rom[wide_plane_addr:wide_plane_addr + len(wide_plane)] = wide_plane
+    place_strings(rom, entries, translations, wide_map, wide_plane_addr + len(wide_plane))
     fix_header(rom)
     return bytes(rom)
 
