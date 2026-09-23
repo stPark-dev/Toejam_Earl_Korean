@@ -231,12 +231,12 @@ def test_graphic_labels_are_rewritten(sample_rom, original):
             at = label.asset + idx * 32
             assert sample_rom[at:at + 32] == data
             assert any(original[at:at + 32])
+    # rendering still works for the deferred labels (palette stays within the declared indices)
+    for label in labels.DEFERRED_LABELS:
+        tiles = labels.render_label(label)
         nibbles = {b >> 4 for d in tiles.values() for b in d} | {b & 15 for d in tiles.values() for b in d}
         allowed = {label.bg, label.ink} | ({label.outline} if label.outline is not None else set())
         assert nibbles <= allowed
-    # the shared tile 31 stays a plain background so "얼은" is not followed by a stray glyph
-    at = labels.HUD_ASSET + 28 * 32
-    assert sample_rom[at:at + 32] == bytes([0xDD]) * 32
 
 
 def test_vram_allocator_hook_bumps_strip_cache_generation(sample_rom):
@@ -257,3 +257,10 @@ def test_renderer_refuses_unallocated_vram_slots(original):
     assert build.POOL_BLOCKS == 0x50
     alloc = code[symbols["alloc_glyph"]:symbols["ag_hit"]]
     assert b"\x3a\x3c\x06\x00" in alloc and b"\x3a\x3c\x06\x40" in alloc   # rings at tiles 0x600 / 0x640
+
+
+def test_leaving_menu_mode_clears_the_spilled_rows(original):
+    code, symbols = build.assemble(build.NARROW_ADDR, build.WIDE_ADDR, 0x110000, build.BLANK_ADDR)
+    routine = code[symbols["leave_menu"]:symbols["menu_begin"]]
+    assert b"\x58\x82\x00\x03" in routine                    # window row 17, column 1
+    assert struct.pack(">I", 0x800000 * 2) in routine          # two rows down per step

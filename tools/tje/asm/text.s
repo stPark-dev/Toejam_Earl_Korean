@@ -248,7 +248,7 @@ blank_column:
 |   2  Korean two-row text, glyph tiles streamed into the message ring
 | Mode 0 keeps its own glyph cache so HUD text survives messages.
 | ---------------------------------------------------------------------------
-	.globl	plane_text, plane_text_pad13, plane_blank, plane_word_d0, menu_begin
+	.globl	plane_text, plane_text_pad13, plane_blank, plane_word_d0, menu_begin, leave_menu
 	.globl	pt_korean, stage_glyph, flush_pending, upload_direct
 	.globl	set_cmd_d0_m0, set_cmd_d1_m0, set_cmd_imm_m0
 	.globl	set_cmd_d0_m1, set_cmd_d1_m1, set_cmd_imm_m1
@@ -288,6 +288,12 @@ blank_column:
 .macro	ENTER_MODE mode, start
 	cmpi.b	#\mode,PT_MODE
 	beq	9f
+.if \mode != 1
+	cmpi.b	#1,PT_MODE
+	bne	8f
+	bsr	leave_menu		| menu text left 16px bottom halves behind
+8:
+.endif
 	move.b	#\mode,PT_MODE
 .if \mode
 	move.w	#\start,VARS_KO
@@ -325,6 +331,25 @@ blank_column:
 	SET_CMD_REG set_cmd_d0_m2, %d0, 2, MSG_RING_START
 	SET_CMD_REG set_cmd_d1_m2, %d1, 2, MSG_RING_START
 	SET_CMD_IMM set_cmd_imm_m2, 2, MSG_RING_START
+
+| Menu items sit on even window rows; our second row spills onto the odd
+| rows 17-23, which the game never clears and which show in-game (the window
+| starts at screen row 23). Blank their interior (columns 1-38) and put the
+| caller's write address back.
+leave_menu:
+	movem.l	%d0-%d2/%a0,-(%sp)
+	tst.w	VDP_CTRL		| reading the status clears a half-written command
+	move.l	#0x58820003,%d1		| VRAM write at 0xD882 = 0xD000 + 17*0x80 + 2 (row 17, col 1)
+	moveq	#4-1,%d0		| rows 17, 19, 21, 23
+1:	move.l	%d1,VDP_CTRL
+	move.w	#38-1,%d2		| columns 1..38
+2:	move.w	#0,VDP_DATA
+	dbra	%d2,2b
+	addi.l	#ROW_STEP*2,%d1
+	dbra	%d0,1b
+	move.l	PT_CMD,VDP_CTRL		| back to the caller's address
+	movem.l	(%sp)+,%d0-%d2/%a0
+	rts
 
 menu_begin:				| hook at 0x23A44: a menu is being drawn
 	move.b	#1,PT_MODE
