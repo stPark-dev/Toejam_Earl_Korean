@@ -14,10 +14,28 @@ TEXT_WINDOWS = ((0x20000, 0x27000), (0x2A000, 0x2C000),
                 (0xA730, 0xA760),          # debug/present HUD labels
                 (0xA9F40, 0xA9F82),        # rank names (RANK_NAMES)
                 (0xABA00, 0xABE00),        # present names (13-char fields)
-                (0xB710, 0xB730))          # "is on vacation"
+                (0xB710, 0xB730),          # "is on vacation"
+                # Speech bubbles that sit in the middle of code, one or two at a
+                # time, instead of in the dialog tables. All of them reach the
+                # screen through BUBBLE_PRINT, so they are capped at 12 columns.
+                (0x9318, 0x9325),          # "Thanks a lot"
+                (0x9CFA, 0x9D0D),          # "Got it!", "Need Bucks"
+                (0xF8B6, 0xF8BD),          # "Bummer"
+                (0x111B2, 0x111C7),        # "Bye Toejam", "Bye Earl"
+                (0x11FFE, 0x12008),        # "Awesome!!"
+                (0x152C0, 0x152C6),        # "yummm"
+                (0x155B2, 0x155BE),        # "I'm stuffed"
+                (0x168AC, 0x168B2),        # "Bogus"
+                (0x1721A, 0x17223),        # "Uh oh?!?"
+                (0x17468, 0x17474),        # "rosebushes!"
+                (0x19CF2, 0x19CFC),        # "shut up!!"
+                (0x1B2CE, 0x1B2D5),        # "Youch!"
+                (0x1B57C, 0x1B588),        # "Hubba hubba"
+                (0x1BB14, 0x1BB20),        # "I feel sick"
+                (0xA9FAA, 0xA9FEB))        # plain-ASCII rank names (table at 0xA9FEC)
 RANK_NAMES = (0xA9F40, 0xA9F82)
-TEXT_START = TEXT_WINDOWS[0][0]
-TEXT_END = TEXT_WINDOWS[-1][1]
+TEXT_START = min(lo for lo, _ in TEXT_WINDOWS)
+TEXT_END = max(hi for _, hi in TEXT_WINDOWS)
 
 
 def in_text_window(addr):

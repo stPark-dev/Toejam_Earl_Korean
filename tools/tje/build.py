@@ -112,7 +112,13 @@ HEADER_CHECKSUM = 0x18E
 
 # Speech bubbles (strings in the dialog tables) are capped at 12 columns by
 # the game; the prompt strings near 0x21000-0x24000 go through the same path.
-BUBBLE_RANGES = ((0x26890, 0x26DE0), (0x21000, 0x24000))
+BUBBLE_RANGES = ((0x26890, 0x26DE0), (0x21000, 0x24000),
+                 # one-off bubbles that live inline in code
+                 (0x9318, 0x9325), (0x9CFA, 0x9D0D), (0xF8B6, 0xF8BD),
+                 (0x111B2, 0x111C7), (0x11FFE, 0x12008), (0x152C0, 0x152C6),
+                 (0x155B2, 0x155BE), (0x168AC, 0x168B2), (0x1721A, 0x17223),
+                 (0x17468, 0x17474), (0x19CF2, 0x19CFC), (0x1B2CE, 0x1B2D5),
+                 (0x1B57C, 0x1B588), (0x1BB14, 0x1BB20))
 BUBBLE_COLUMNS = 12
 NOT_BUBBLES = frozenset((0x235CE, 0x23A1E))     # game over / two controllers: plane text
 
@@ -329,7 +335,7 @@ def place_strings(rom, entries, translations, wide_map, free_addr):
             raise BuildError(f"{entry.key} {ko!r} is {encode.columns(ko)} columns; present names allow {PRESENT_FIELD}")
         data = encode.encode(ko, wide_map)
         size = slot_size(rom, entry)
-        if len(data) <= size:
+        if len(data) < size:            # < , not <=: the terminator needs a byte
             rom[entry.addr:entry.addr + size] = data + bytes(size - len(data))
             continue
         free_addr += free_addr & 1

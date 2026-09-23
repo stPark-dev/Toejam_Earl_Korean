@@ -23,19 +23,29 @@ class Label:
     outline: int = None   # 16px labels only
 
 
-# Active label replacements. The HUD panel labels ("toEJaM iS A", "EaRL iS")
-# are kept in the original lettering: 7px Hangul in 8x8 tiles turned out too
-# hard to read next to the original artwork.
-LABELS = ()
+# Active label replacements. The HUD panel labels went back to Korean once the
+# 8x8 Hangul became legible (Galmuri7 has to be rendered at 8px, not 7 -- see
+# font.HUD_FONT); at 7px every syllable with a final consonant was a blob.
+# Tile numbering: tile 31 is the "t" of "toEJaM". Tiles 10-30 are the purple
+# border decoration (bg 0xD, yellow 0x5) -- writing labels there scatters
+# Hangul through the panel frame.
+LABELS = (
+    # "toEJaM iS A" (the rank name follows at run time); asset loads at VRAM 0x588
+    Label(HUD_ASSET, ((31, 32, 33, 34, 35, 36, 37),), "토잼 등급", bg=0xF, ink=0x9),
+    # "EaRL iS" ("휴가 / 중" follows at run time). Earl's panel draws five tiles
+    # in this order; 36 is shared with Toejam's label and both blank it.
+    Label(HUD_ASSET, ((38, 39, 40, 46, 36),), "얼은", bg=0xF, ink=0x9),
+    # "BUCKS": the S lives apart, at tile 45. The count is drawn to the right of
+    # the label, so the syllable sits in the last tile before it.
+    Label(HUD_ASSET, ((1, 2, 3, 4, 45),), "   돈 ", bg=0xF, ink=0x5),
+    # "POiNTS": the count is drawn to its left, so the syllable leads.
+    Label(HUD_ASSET, ((5, 6, 7, 8, 9, 10),), "점     ", bg=0xF, ink=0x5),
+)
 
 # The present list's "OPEN" title (asset 0xABF0A, tiles 1-18) is animated by
 # copying pixel rows, not whole tiles, so replacing its tiles scrambles it.
 # Kept here for a later pass that rewrites the copy routine.
 DEFERRED_LABELS = (
-    # "toEJaM iS A" (rank name follows at run time); the asset loads at VRAM 0x588
-    Label(HUD_ASSET, ((23, 24, 25, 26, 27, 28, 29),), "토잼 등급", bg=0xD, ink=0x5),
-    # "EaRL iS" ("휴가 / 중" follows at run time); tile 28 is shared and stays blank
-    Label(HUD_ASSET, ((30, 31, 32, 38),), "얼은", bg=0xF, ink=0x9),
     Label(PRESENTS_ASSET, ((1, 2, 3, 4, 5, 6, 7, 8, 9), (10, 11, 12, 13, 14, 15, 16, 17, 18)),
           "선물 열기", bg=0xF, ink=0xC, outline=0x1),
 )

@@ -1,4 +1,7 @@
 id,en,ko,refs
+009318,Thanks a lot,정말 고마워,pcrel@0092D2
+009CFA,Got it!,받았다!,pcrel@009CA8
+009D02,Need Bucks,돈이 부족해,pcrel@009CDE
 00A1A0, pts,점,pcrel@00A11E
 00A1A6, pts,점,pcrel@00A16E
 00A730,un-fall .....,미확인,pcrel@00A6CC
@@ -6,6 +9,19 @@ id,en,ko,refs
 00B716,vacation,   중,pcrel@00B6C0
 00B720, on, 휴가,pcrel@00B6EE
 00B724,vacation,   중,pcrel@00B702
+00F8B6,Bummer,아쉽네,pcrel@00F888
+0111B2,Bye Toejam,잘 가 토잼,pcrel@011144
+0111BE,Bye Earl,잘 가 얼,pcrel@011154 abs32@0F989A
+011FFE,Awesome!!,멋지다!!,pcrel@011FCE
+0152C0,yummm,냠냠냠,pcrel@0152A8
+0155B2,I'm stuffed,배불러,pcrel@0154F6
+0168AC,Bogus,별로야,pcrel@0167B6
+01721A,Uh oh?!?,어라?!?,pcrel@017076
+017468,rosebushes!,장미덤불!,pcrel@0173AE
+019CF2,shut up!!,조용히 해!!,pcrel@019A78
+01B2CE,Youch!,아야!,pcrel@01B284
+01B57C,Hubba hubba,오호라,pcrel@01B4E0
+01BB14,I feel sick,속이 안 좋아,pcrel@01B966
 020376,rocketship windshield,로켓 앞유리,abs32@0202CE
 02038C,left megawatt speaker,왼쪽 메가와트 스피커,abs32@0202D6
 0203A2,super funkomatic amplamator,슈퍼 펑코매틱 앰플러메이터,abs32@0202DE
@@ -271,6 +287,14 @@ id,en,ko,refs
 0A9F71,rar,랩마스터,abs32@0A9F9E
 0A9F77,fl,펑크로드,abs32@0A9FA2
 0A9F7C,goner,끝장,abs32@0A9FA6
+0A9FB1,dufus,멍청이,abs32@0A9FF0
+0A9FB7,poindexter,범생이,abs32@0A9FF4
+0A9FC2,peanut,땅콩,abs32@0A9FF8
+0A9FC9,dude,친구,abs32@0A9FFC
+0A9FCE,bro,형님,abs32@0AA000
+0A9FD2,homey,홈보이,abs32@0AA004
+0A9FD8,rapmaster,랩마스터,abs32@0AA008
+0A9FE2,funklord,펑크로드,abs32@0AA00C
 0ABBB6,bonus hitops,보너스 하이탑,abs32@1011EC
 0ABC42,icarus wings ,이카루스 날개,abs32@0ABDBC
 0ABC50,spring shoes ,스프링 슈즈,abs32@0ABDC0

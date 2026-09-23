@@ -1,3 +1,4 @@
+import os
 import shutil
 import struct
 
@@ -217,6 +218,36 @@ def test_hud_glyph_uploads_go_through_the_staging_queue(original):
     hud = code[symbols["plane_text"]:symbols["pt_korean"]]
     assert b"\x00\xc0\x00\x04" not in hud                       # no $C00004 writes
     assert b"\x4e\xb9\x00\x00\xca\xfc" in code[symbols["stage_glyph"]:symbols["flush_pending"]]
+
+
+def test_inline_bubbles_are_extracted_and_translated(original):
+    """Bubbles that sit inline in code, not in the dialog tables.
+
+    They were invisible to the extractor until their addresses were added to
+    TEXT_WINDOWS, so every one of them stayed English in the built ROM.
+    """
+    inline = {0x9318: "Thanks a lot", 0x9CFA: "Got it!", 0x9D02: "Need Bucks",
+              0xF8B6: "Bummer", 0x111B2: "Bye Toejam", 0x111BE: "Bye Earl",
+              0x11FFE: "Awesome!!", 0x152C0: "yummm", 0x155B2: "I'm stuffed",
+              0x168AC: "Bogus", 0x1721A: "Uh oh?!?", 0x17468: "rosebushes!",
+              0x19CF2: "shut up!!", 0x1B2CE: "Youch!", 0x1B57C: "Hubba hubba",
+              0x1BB14: "I feel sick"}
+    found = {e.addr: e.text for e in strings.extract(original)}
+    translations = build.load_translations(os.path.join(build.ROOT, "translations", "strings.csv"))
+    for addr, text in inline.items():
+        assert found.get(addr) == text, f"{addr:06X} is not extracted"
+        ko = translations.get(f"{addr:06X}", "")
+        assert ko, f"{addr:06X} {text!r} has no translation"
+        assert encode.columns(ko) <= build.BUBBLE_COLUMNS
+    # the second, plain-ASCII rank table (pointer table at 0xA9FEC)
+    for addr in (0xA9FB1, 0xA9FB7, 0xA9FC2, 0xA9FC9, 0xA9FCE, 0xA9FD2, 0xA9FD8, 0xA9FE2):
+        assert translations.get(f"{addr:06X}", ""), f"{addr:06X} has no translation"
+
+
+def test_in_place_translation_keeps_room_for_the_terminator(original):
+    """A translation that exactly fills its slot must relocate, not lose its NUL."""
+    entry = next(e for e in strings.extract(original) if e.addr == 0x9CFA)   # "Got it!"
+    assert build.slot_size(original, entry) == len(entry.text) + 1
 
 
 def test_bubble_strip_carries_both_tile_and_column_counts():
