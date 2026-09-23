@@ -3,9 +3,9 @@ id,en,ko,refs
 00A1A6, pts,점,pcrel@00A16E
 00A730,un-fall .....,미확인,pcrel@00A6CC
 00B712, on, 휴가,pcrel@00B6AC
-00B716,vacation,중,pcrel@00B6C0
+00B716,vacation,   중,pcrel@00B6C0
 00B720, on, 휴가,pcrel@00B6EE
-00B724,vacation,중,pcrel@00B702
+00B724,vacation,   중,pcrel@00B702
 020376,rocketship windshield,로켓 앞유리,abs32@0202CE
 02038C,left megawatt speaker,왼쪽 메가와트 스피커,abs32@0202D6
 0203A2,super funkomatic amplamator,슈퍼 펑코매틱 앰플러메이터,abs32@0202DE
@@ -22,7 +22,7 @@ id,en,ko,refs
 0205D6,no pieces on this level,이 층에는 부품이 없다,pcrel@020518
 0205EE,no pieces on toejam's level,토잼의 층에는 부품이 없다,pcrel@02052E
 02060A,no pieces on earl's level,얼의 층에는 부품이 없다,pcrel@020540 abs32@08BF96
-020624, missing rocketship pieces, 개의 부품이 남았다,pcrel@020560
+020624, missing rocketship pieces,개의 부품이 남았다,pcrel@020560
 020CBE,Jammin,잼잉,pcrel@020CA4
 0213AE,Mail Order?,통신판매?,pcrel@0211F0
 02167A,Got a buck?,1달러 있어?,pcrel@0214FA

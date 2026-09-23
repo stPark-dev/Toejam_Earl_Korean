@@ -1,3 +1,5 @@
+from PIL import ImageFont
+
 from tools.tje import font
 
 
@@ -93,6 +95,16 @@ def test_plane_glyph_uses_menu_font_palette():
     assert nibbles == {font.PLANE_BG, font.PLANE_INK, font.PLANE_SHADE}
     assert font.glyph(" ", wide=True, plane=True) == bytes(128)
     assert len(font.narrow_table(plane=True)) == 95 * 64
+
+
+def test_hud_font_renders_on_the_full_eight_pixel_grid():
+    """Galmuri7 draws Hangul on an 8-unit grid; 7px merges strokes into a blob."""
+    path, size, _top = font.HUD_FONT
+    face = ImageFont.truetype(path, size)
+    for ch in "갈휴얼중":
+        left, top, right, bottom = face.getbbox(ch)
+        assert (right, bottom) == (8, 8) and left == 0
+        assert top >= 1                     # the spare row is at the top, so nothing clips
 
 
 def test_hud_glyph_jitter_never_clips_the_glyph():

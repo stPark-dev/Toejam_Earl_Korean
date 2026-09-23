@@ -20,8 +20,12 @@ WIDE_FONT = (os.path.join(FONT_DIR, "Galmuri14.ttf"), 14, 0)      # path, px, to
 # ASCII: Galmuri11's Latin glyphs fit the 7 usable columns of a narrow cell.
 NARROW_FONT = (os.path.join(FONT_DIR, "Galmuri11.ttf"), 11, 2)
 # HUD: the in-game panel uses one row of 8x8 tiles, so Hangul there is a
-# 7px Galmuri7 glyph in an 8x8 tile, drawn in the original HUD font's colours.
-HUD_FONT = (os.path.join(FONT_DIR, "Galmuri7.ttf"), 7, 0)
+# Galmuri7 glyph in an 8x8 tile, drawn in the original HUD font's colours.
+# Size 8, not 7: Galmuri7's Hangul is drawn on an 8-unit grid, and asking for
+# 7px squeezes every syllable with a final consonant into an unreadable blob
+# (in-game "휴가" came out looking like "호기"). At 8 the glyph occupies
+# rows 1..7 of the tile, so nothing is clipped and the baseline stays level.
+HUD_FONT = (os.path.join(FONT_DIR, "Galmuri7.ttf"), 8, 0)
 HUD_BG = 0xF                # opaque box, as the original 8x8 HUD font
 HUD_INK = 0x5
 CELL_H = 16
