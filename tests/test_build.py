@@ -46,12 +46,10 @@ def test_print_routines_use_16px_and_64_tiles(sample_rom, original):
         assert sample_rom[sprites:sprites + 6] == original[sprites:sprites + 6]   # 8 hardware sprites
 
 
-def test_sprite_pieces_are_two_tiles_tall(sample_rom):
+def test_original_sprite_piece_lists_are_untouched(sample_rom, original):
     for table in build.SPRITE_LISTS:
-        for i in range(build.SPRITE_PIECES):
-            piece = table + 4 + i * build.SPRITE_PIECE_SIZE
-            assert sample_rom[piece] == 4 and sample_rom[piece + 1] == 2
-            assert sample_rom[piece + 3] == build.SPRITE_Y
+        end = table + 4 + build.SPRITE_PIECES * build.SPRITE_PIECE_SIZE
+        assert sample_rom[table:end] == original[table:end]
 
 
 def test_fonts_are_installed(sample_rom):
@@ -130,9 +128,9 @@ def test_plane_text_hooks(sample_rom, original):
             assert sample_rom[site + 6:site + 8] == original[site + 6:site + 8]
 
 
-def test_sprite_vram_pool_is_shrunk_for_message_glyphs(sample_rom):
+def test_sprite_vram_pool_keeps_its_full_size(sample_rom):
     from tools.tje.rom import VRAM_ALLOC_LIMIT
-    assert sample_rom[VRAM_ALLOC_LIMIT:VRAM_ALLOC_LIMIT + 4] == b"\x0c\x43\x00" + bytes((build.POOL_BLOCKS,))
+    assert sample_rom[VRAM_ALLOC_LIMIT:VRAM_ALLOC_LIMIT + 4] == b"\x0c\x43\x00\x50"
 
 
 def test_hud_strings_stay_english_when_hud_korean_is_off(original, monkeypatch):
@@ -239,3 +237,23 @@ def test_graphic_labels_are_rewritten(sample_rom, original):
     # the shared tile 31 stays a plain background so "얼은" is not followed by a stray glyph
     at = labels.HUD_ASSET + 28 * 32
     assert sample_rom[at:at + 32] == bytes([0xDD]) * 32
+
+
+def test_vram_allocator_hook_bumps_strip_cache_generation(sample_rom):
+    from tools.tje.rom import VRAM_ALLOC
+    assert sample_rom[VRAM_ALLOC:VRAM_ALLOC + 2] == b"\x4e\xf9"
+    target = struct.unpack_from(">I", sample_rom, VRAM_ALLOC + 2)[0]
+    code = sample_rom[target:target + 20]
+    assert code[:6] == b"\x52\x79\x00\xff\xef\xf4"          # addq.w #1,ALLOC_GEN
+    assert code[6:10] == b"\x48\xe7\x38\x00"                    # displaced movem
+    assert code[14:20] == b"\x4e\xf9\x00\x00\xd6\x18"          # jmp back
+
+
+def test_renderer_refuses_unallocated_vram_slots(original):
+    code, symbols = build.assemble(build.NARROW_ADDR, build.WIDE_ADDR, 0x110000, build.BLANK_ADDR)
+    body = code[symbols["render_body"]:symbols["render_skip"]]
+    assert b"\x04\x40\x02\x80" in body                  # subi.w #0x280,d0
+    assert b"\x00\xff\xd9\x76" in body                  # VRAM allocator bitmap
+    assert build.POOL_BLOCKS == 0x50
+    alloc = code[symbols["alloc_glyph"]:symbols["ag_hit"]]
+    assert b"\x3a\x3c\x06\x00" in alloc and b"\x3a\x3c\x06\x40" in alloc   # rings at tiles 0x600 / 0x640

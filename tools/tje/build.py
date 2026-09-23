@@ -22,7 +22,7 @@ from .rom import (BONUS_HITOPS_GLYPH, BUBBLE_PRINT, BUBBLE_RENDERER, GLYPH_RENDE
                   PRESENT_NAMES_GLYPH, PRESENT_NAMES_KO, PRESENT_UNKNOWN_ASCII,
                   PRESENT_UNKNOWN_GLYPH,
                   PRINT_ROUTINES, ROOT, SPRITE_DEF_BUBBLE, SPRITE_DEF_TEXT,
-                  VRAM_ALLOC_LIMIT, read_rom)
+                  VRAM_ALLOC, VRAM_ALLOC_LIMIT, read_rom)
 
 ROM_SIZE = 0x200000
 CODE_ADDR = 0x100000
@@ -93,7 +93,9 @@ CMD_HOOKS = (
 # through the game's staging buffer / VBlank DMA queue instead of being
 # written mid-row, which removed the dependence on tracking the VDP address.
 HUD_KOREAN = True
-POOL_BLOCKS = 0x30 if HUD_KOREAN else 0x40   # original 0x50; blocks above hold streamed glyphs
+# Sprite VRAM pool keeps all 0x50 blocks: the intro alone uses up to 69.
+# Glyph rings for HUD/message text live in the unused VRAM at 0xC000.
+POOL_BLOCKS = 0x50
 # Strings drawn by the legacy HUD path; ignored unless HUD_KOREAN.
 HUD_RANGES = ((0xA19C, 0xA1AC), (0xA730, 0xA760), (0xA9F40, 0xA9F82),
               (0xABA00, 0xABE00), (0xB710, 0xB730))
@@ -208,12 +210,11 @@ def patch_engine(rom, code, symbols):
         if at < 0:
             raise BuildError(f"print routine at {base:06X} lacks the piece list argument")
         rom[at:at + 6] = b"\x2f\x2a\x00\x22\x4e\x71"
+    # The original 8-piece lists at 0xAFA98/0xAFAEC stay untouched: text
+    # objects now get their own lists from fixup_text_object, and other
+    # objects (the intro's space scene among them) still use the originals.
     for table in SPRITE_LISTS:
         expect(rom, table, b"\x08\x00\x00\x00")
-        for i in range(SPRITE_PIECES):
-            piece = table + 4 + i * SPRITE_PIECE_SIZE
-            patch(rom, piece + 1, b"\x02", original=b"\x01")
-            patch(rom, piece + 3, bytes((SPRITE_Y,)), original=b"\xf8")
     # speech bubbles
     patch(rom, BUBBLE_RENDERER, b"\x4e\xf9" + struct.pack(">I", CODE_ADDR + symbols["render_bubble"]),
           original=b"\x48\xe7\x3f\x30\x26\x2f\x00\x24")
@@ -250,7 +251,8 @@ def patch_plane_text(rom, symbols):
         else:
             reg = int(form[1])
             patch(rom, site, stub, original=bytes((0x23, 0xC0 | reg)) + VDP_CTRL)
-    patch(rom, VRAM_ALLOC_LIMIT, b"\x0c\x43\x00" + bytes((POOL_BLOCKS,)), original=b"\x0c\x43\x00\x50")
+    expect(rom, VRAM_ALLOC_LIMIT, b"\x0c\x43\x00\x50")
+    patch(rom, VRAM_ALLOC, jmp(symbols, "vram_alloc_hook"), original=b"\x48\xe7\x38\x00\x32\x2f\x00\x12")
 
 
 def patch_present_list(rom, symbols):

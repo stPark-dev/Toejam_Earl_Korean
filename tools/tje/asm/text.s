@@ -13,8 +13,8 @@
 | (menu palette), HUD_FONT, BLANK_GLYPH, PIECE_LISTS come from --defsym.
 
 	.text
-	.globl	render_remap, render_raw, render_bubble
-	.globl	fixup_text_object, fixup_text_object_alt
+	.globl	render_remap, render_raw, render_bubble, render_body, render_skip, alloc_glyph, ag_hit
+	.globl	fixup_text_object, fixup_text_object_alt, vram_alloc_hook
 
 	.equ	COPY_REMAP, 0x27B54	| copies tiles, remapping palette 8/9/A/B
 	.equ	COPY_RAW, 0xCAFC	| copies tiles verbatim
@@ -23,6 +23,19 @@
 	.equ	QUEUE, 0xFFD8DC
 	.equ	PIECE_LIST_SIZE, 84
 	.equ	BUBBLE_STRIP, (25 << 16) | 12	| tiles queued : columns
+	| Strip cache: the game re-prints visible text every frame. A strip whose
+	| string, width and VRAM slot match an entry made since the last VRAM
+	| allocation is still in VRAM, so staging and DMA are skipped.
+	.equ	STRIP_CACHE, 0xFFEC80		| STRIP_CACHE_N x {vram.w, str.l, cols.w, gen.w}
+	.equ	STRIP_CACHE_N, 8
+	.equ	STRIP_ENTRY, 10
+	.equ	STRIP_NEXT, 0xFFEFF2		| word: round-robin victim
+	.equ	ALLOC_GEN, 0xFFEFF4		| word: bumped by every VRAM allocation
+	.equ	RENDER_COUNT, 0xFFEFF6		| word: strips rendered (diagnostics)
+	.equ	VRAM_ALLOC_RESUME, 0xD618
+	.equ	VRAM_BITMAP, 0xFFD976		| one byte per 8-tile block from tile 0x280
+	.equ	POOL_FIRST_TILE, 0x280
+	.equ	POOL_BLOCKS_MAX, 0x50
 
 | pieces = max(1, ceil(columns/4)); in: d5.w columns, a2 object.
 | The _alt entry selects the second set of lists (piece flag byte 3, as the
@@ -65,10 +78,6 @@ render_bubble:
 	movem.l	%d2-%d7/%a2-%a3,-(%sp)
 	lea	COPY_RAW,%a3
 	move.l	#BUBBLE_STRIP,%d3
-	pea	1
-	pea	TAIL_TILE
-	jsr	COPY_RAW
-	addq.l	#8,%sp
 render_body:
 	movea.l	0x24(%sp),%a2
 	move.w	0x2a(%sp),%d2
@@ -86,7 +95,51 @@ render_body:
 	lsl.w	#2,%d3			| columns = pieces * 4
 	move.w	%d3,%d7
 	move.l	%d7,%d3
-0:	move.w	%d3,%d7
+0:	move.w	%d4,%d0			| ---- is the slot really allocated? ----
+	subi.w	#POOL_FIRST_TILE,%d0	| an object whose allocation failed keeps a
+	bmi	render_skip		| stale tile index; drawing there would trash
+	lsr.w	#3,%d0			| whatever lives in VRAM now
+	cmpi.w	#POOL_BLOCKS_MAX,%d0
+	bhs	render_skip
+	lea	VRAM_BITMAP,%a0
+	tst.b	(%a0,%d0.w)
+	beq	render_skip
+	lea	STRIP_CACHE,%a0		| ---- already in VRAM? ----
+	moveq	#STRIP_CACHE_N-1,%d0
+1:	cmp.w	(%a0),%d4		| same VRAM slot
+	bne	2f
+	cmp.l	2(%a0),%a2		| same string
+	bne	4f
+	cmp.w	6(%a0),%d2		| same width
+	bne	4f
+	move.w	8(%a0),%d1
+	cmp.w	ALLOC_GEN,%d1		| nothing allocated since
+	bne	4f
+	bra	render_skip
+2:	lea	STRIP_ENTRY(%a0),%a0
+	dbra	%d0,1b
+	lea	STRIP_CACHE,%a0		| not cached: take the round-robin victim
+	move.w	STRIP_NEXT,%d0
+	mulu	#STRIP_ENTRY,%d0
+	adda.l	%d0,%a0
+	move.w	STRIP_NEXT,%d0
+	addq.w	#1,%d0
+	cmpi.w	#STRIP_CACHE_N,%d0
+	blt	3f
+	moveq	#0,%d0
+3:	move.w	%d0,STRIP_NEXT
+4:	move.w	%d4,(%a0)		| record this strip
+	move.l	%a2,2(%a0)
+	move.w	%d2,6(%a0)
+	move.w	ALLOC_GEN,8(%a0)
+	addq.w	#1,RENDER_COUNT
+	cmpi.l	#BUBBLE_STRIP,%d3
+	bne	5f
+	pea	1			| speech bubble tail tile first
+	pea	TAIL_TILE
+	jsr	COPY_RAW
+	addq.l	#8,%sp
+5:	move.w	%d3,%d7
 	sub.w	%d2,%d7			| total padding
 	bge	1f
 	moveq	#0,%d7
@@ -156,8 +209,16 @@ next_char:
 	add.w	%d0,%d0
 	swap	%d3
 	move.w	%d3,(%a1,%d0.w)		| tiles queued for this strip
+render_skip:
 	movem.l	(%sp)+,%d2-%d7/%a2-%a3
 	rts
+
+vram_alloc_hook:			| hook at 0xD610: any VRAM allocation invalidates the cache
+	addq.w	#1,ALLOC_GEN
+	movem.l	%d2-%d4,-(%sp)		| displaced instructions
+	move.w	0x12(%sp),%d1
+	jmp	VRAM_ALLOC_RESUME
+
 
 emit_blanks:				| d5 = number of blank columns
 	bra	2f
@@ -208,10 +269,14 @@ blank_column:
 	.equ	CACHE_MAX, 96
 	.equ	MENU_RING_START, 0x080	| free in menu scenes only
 	.equ	MENU_RING_END, 0x200
-	.equ	HUD8_RING_START, 0x400	| blocks 0x30-0x3F of the sprite pool,
-	.equ	HUD8_RING_END, 0x480	| withheld from the allocator by the build
-	.equ	MSG_RING_START, 0x480	| blocks 0x40-0x4F, likewise
-	.equ	MSG_RING_END, 0x500
+	| HUD (mode 0) and message (mode 2) glyph rings live in VRAM 0xC000-0xCFFF
+	| (tiles 0x600-0x67F): plane A sits at 0xA000 and the window at 0xD000 in
+	| every scene we sampled, so this 4KB is never a name table or the sprite
+	| pool. The menu ring (mode 1) uses tiles free only in menu scenes.
+	.equ	HUD8_RING_START, 0x600
+	.equ	HUD8_RING_END, 0x640
+	.equ	MSG_RING_START, 0x640
+	.equ	MSG_RING_END, 0x680
 	.equ	BLANK_WORD, 0x85B4	| original font tile 0: blank, priority, pal 0
 	.equ	TILE_ATTR, 0x8000
 	.equ	COL_STEP, 0x20000	| +2 bytes of VRAM in the command's address field
@@ -324,13 +389,16 @@ hud_wide:
 	lsl.l	#5,%d0			| 32 bytes per 8x8 glyph
 	addi.l	#HUD_FONT,%d0
 	moveq	#1,%d1
-	bsr	alloc_glyph
+	bsr	alloc_glyph_saved
 	tst.w	%d4
+	bmi	2f			| no VRAM for glyphs: blank
 	beq	1f
-	bsr	stage_glyph		| new glyph: stage its tile for the VBlank DMA
+	bsr	stage_glyph		| new glyph (d0 still = tile data): stage it
 1:	move.w	%d3,%d0
 	ori.w	#TILE_ATTR,%d0
-	move.w	%d0,VDP_DATA
+	bra	3f
+2:	move.w	#BLANK_WORD,%d0
+3:	move.w	%d0,VDP_DATA
 	addi.l	#COL_STEP,PT_CMD
 	addq.w	#1,%d7
 	bra	hud_loop
@@ -399,8 +467,9 @@ pt_loop:
 	lsl.l	#6,%d0
 	addi.l	#NARROW_PLANE,%d0
 	moveq	#2,%d1
-	bsr	alloc_glyph
+	bsr	alloc_glyph_saved
 	tst.w	%d4
+	bmi	pt_space		| no VRAM for glyphs: blank column
 	beq	1f
 	bsr	upload_direct
 1:	move.w	%d3,%d0
@@ -428,8 +497,9 @@ pt_wide:
 	lsl.l	#7,%d0
 	addi.l	#WIDE_PLANE,%d0
 	moveq	#4,%d1
-	bsr	alloc_glyph
+	bsr	alloc_glyph_saved
 	tst.w	%d4
+	bmi	pt_wide_blank		| no VRAM for glyphs: two blank columns
 	beq	1f
 	bsr	upload_direct
 1:	move.w	%d3,%d0
@@ -441,6 +511,13 @@ pt_wide:
 	move.w	%d0,(%a3)+		| TR
 	addq.w	#1,%d0
 	move.w	%d0,(%a4)+		| BR
+	addq.w	#2,%d7
+	bra	pt_loop
+pt_wide_blank:
+	move.w	#BLANK_WORD,(%a3)+
+	move.w	#BLANK_WORD,(%a4)+
+	move.w	#BLANK_WORD,(%a3)+
+	move.w	#BLANK_WORD,(%a4)+
 	addq.w	#2,%d7
 	bra	pt_loop
 pt_done:
@@ -472,8 +549,16 @@ pt_done:
 	rts
 
 | alloc_glyph: d2.w = cache key, d1.w = tile count. Returns d3.w = first
-| VRAM tile and d4.w = 1 when the glyph is new (caller uploads it).
+| VRAM tile and d4.w = 1 when the glyph is new (caller uploads it), 0 when
+| cached (d4 < 0 is reserved for "no VRAM"; not produced with static rings).
 | Uses the cache/ring of the current mode; clobbers a0-a1, d5-d6.
+| alloc_glyph_saved keeps a2/a3.
+alloc_glyph_saved:
+	movem.l	%a2-%a3,-(%sp)
+	bsr	alloc_glyph
+	movem.l	(%sp)+,%a2-%a3
+	rts
+
 alloc_glyph:
 	lea	VARS_HUD,%a0
 	lea	CACHE_HUD,%a1
