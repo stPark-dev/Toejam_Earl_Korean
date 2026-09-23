@@ -93,3 +93,12 @@ def test_plane_glyph_uses_menu_font_palette():
     assert nibbles == {font.PLANE_BG, font.PLANE_INK, font.PLANE_SHADE}
     assert font.glyph(" ", wide=True, plane=True) == bytes(128)
     assert len(font.narrow_table(plane=True)) == 95 * 64
+
+
+def test_hud_glyph_jitter_never_clips_the_glyph():
+    for ch in "가나다라마바사아자차카타파하위너휴중":
+        tile = font.hud_glyph(ch)
+        rows = [tile[r * 4:r * 4 + 4] for r in range(8)]
+        ink_rows = [r for r, row in enumerate(rows) if any((b >> 4) == font.HUD_INK or (b & 15) == font.HUD_INK for b in row)]
+        assert ink_rows and ink_rows[0] >= 0 and ink_rows[-1] <= 7
+        assert len(ink_rows) >= 5                     # the glyph body is intact

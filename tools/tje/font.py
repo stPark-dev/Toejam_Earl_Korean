@@ -165,10 +165,11 @@ def hud_glyph(ch):
     if HUD_FONT not in _fonts:
         _fonts[HUD_FONT] = ImageFont.truetype(path, size)
     f = _fonts[HUD_FONT]
-    left, _t, right, _b = f.getbbox(ch)
+    left, _t, right, bottom = f.getbbox(ch)
     x = max(0, (7 - (right - left)) // 2) - left
+    y = top + (jitter(ch) if bottom + top < 8 else 0)     # wobble when there is a spare row
     img = Image.new("1", (8, 8), 0)
-    ImageDraw.Draw(img).text((x, top), ch, font=f, fill=1)
+    ImageDraw.Draw(img).text((x, y), ch, font=f, fill=1)
     px = img.load()
     cell = [[HUD_INK if px[c, r] else HUD_BG for c in range(8)] for r in range(8)]
     return tile_bytes(cell, 0, 0)

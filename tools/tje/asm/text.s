@@ -180,12 +180,15 @@ blank_column:
 | set. Every caller's control-port write is redirected to a set_cmd_* stub
 | that records the address in PT_CMD and selects a mode:
 |   0  HUD: one row of 8x8 tiles. ASCII uses the original font already in
-|      VRAM (via 0x9E0E); Hangul streams 8x8 glyphs into the HUD8 ring.
+|      VRAM (via 0x9E0E); Hangul glyphs go to the HUD8 ring through the
+|      game's own tile staging buffer and VBlank DMA queue, so the VDP write
+|      address is never disturbed while the caller is writing a row.
 |   1  Korean two-row text, glyph tiles streamed into the menu ring
 |   2  Korean two-row text, glyph tiles streamed into the message ring
 | Mode 0 keeps its own glyph cache so HUD text survives messages.
 | ---------------------------------------------------------------------------
 	.globl	plane_text, plane_text_pad13, plane_blank, plane_word_d0, menu_begin
+	.globl	pt_korean, stage_glyph, flush_pending, upload_direct
 	.globl	set_cmd_d0_m0, set_cmd_d1_m0, set_cmd_imm_m0
 	.globl	set_cmd_d0_m1, set_cmd_d1_m1, set_cmd_imm_m1
 	.globl	set_cmd_d0_m2, set_cmd_d1_m2, set_cmd_imm_m2
@@ -197,6 +200,8 @@ blank_column:
 	.equ	PT_MODE, 0xFFEFE4	| byte: see above
 	.equ	VARS_KO, 0xFFEFE6	| cursor.w, count.w for modes 1/2
 	.equ	VARS_HUD, 0xFFEFEA	| cursor.w, count.w for mode 0
+	.equ	PEND_START, 0xFFEFEE	| word: first tile of glyphs staged this call
+	.equ	PEND_COUNT, 0xFFEFF0	| word: how many (0 = nothing pending)
 	.equ	CACHE_KO, 0xFFE800	| CACHE_MAX x (key.w, tile.w)
 	.equ	CACHE_HUD, 0xFFEB00
 	.equ	PT_ROWBUF, 0xFFEA00	| 64 words top row, then 64 words bottom row
@@ -320,17 +325,59 @@ hud_wide:
 	addi.l	#HUD_FONT,%d0
 	moveq	#1,%d1
 	bsr	alloc_glyph
-	move.l	PT_CMD,VDP_CTRL		| the upload moved the write address
-	move.w	%d3,%d0
+	tst.w	%d4
+	beq	1f
+	bsr	stage_glyph		| new glyph: stage its tile for the VBlank DMA
+1:	move.w	%d3,%d0
 	ori.w	#TILE_ATTR,%d0
 	move.w	%d0,VDP_DATA
 	addi.l	#COL_STEP,PT_CMD
 	addq.w	#1,%d7
 	bra	hud_loop
 hud_done:
+	bsr	flush_pending
 	move.w	%d7,%d0
 	movem.l	(%sp)+,%d2-%d7/%a2-%a4
 	rts
+
+| stage_glyph: d0.l = 32-byte tile in ROM, d3.w = its VRAM tile. Copies the
+| tile into the staging buffer (COPY_RAW) and extends the pending run, or
+| queues the previous run first when this tile is not contiguous with it.
+stage_glyph:
+	pea	1
+	move.l	%d0,-(%sp)
+	jsr	COPY_RAW
+	addq.l	#8,%sp
+	move.w	PEND_COUNT,%d4
+	beq	2f
+	move.w	PEND_START,%d5
+	add.w	%d4,%d5
+	cmp.w	%d3,%d5
+	bne	1f
+	addq.w	#1,PEND_COUNT
+	rts
+1:	bsr	flush_pending
+2:	move.w	%d3,PEND_START
+	move.w	#1,PEND_COUNT
+	rts
+
+flush_pending:				| queue (PEND_START, PEND_COUNT) like a text strip
+	tst.w	PEND_COUNT
+	beq	9f
+	lea	QUEUE_COUNT,%a0
+	lea	QUEUE,%a1
+	moveq	#0,%d4
+	move.b	(%a0),%d4
+	addq.b	#1,(%a0)
+	add.w	%d4,%d4
+	move.w	PEND_START,(%a1,%d4.w)
+	moveq	#0,%d4
+	move.b	(%a0),%d4
+	addq.b	#1,(%a0)
+	add.w	%d4,%d4
+	move.w	PEND_COUNT,(%a1,%d4.w)
+	clr.w	PEND_COUNT
+9:	rts
 
 pt_korean:
 	movem.l	%d2-%d7/%a2-%a4,-(%sp)
@@ -353,7 +400,10 @@ pt_loop:
 	addi.l	#NARROW_PLANE,%d0
 	moveq	#2,%d1
 	bsr	alloc_glyph
-	move.w	%d3,%d0
+	tst.w	%d4
+	beq	1f
+	bsr	upload_direct
+1:	move.w	%d3,%d0
 	ori.w	#TILE_ATTR,%d0
 	move.w	%d0,(%a3)+
 	addq.w	#1,%d0
@@ -379,7 +429,10 @@ pt_wide:
 	addi.l	#WIDE_PLANE,%d0
 	moveq	#4,%d1
 	bsr	alloc_glyph
-	move.w	%d3,%d0
+	tst.w	%d4
+	beq	1f
+	bsr	upload_direct
+1:	move.w	%d3,%d0
 	ori.w	#TILE_ATTR,%d0
 	move.w	%d0,(%a3)+		| TL
 	addq.w	#1,%d0
@@ -418,9 +471,9 @@ pt_done:
 	movem.l	(%sp)+,%d2-%d7/%a2-%a4
 	rts
 
-| alloc_glyph: d2.w = cache key, d1.w = tile count, d0.l = tile data in ROM.
-| Returns d3.w = first VRAM tile. Uploads the tiles on a cache miss.
-| Uses the cache/ring of the current mode; clobbers a0-a1, d4-d6.
+| alloc_glyph: d2.w = cache key, d1.w = tile count. Returns d3.w = first
+| VRAM tile and d4.w = 1 when the glyph is new (caller uploads it).
+| Uses the cache/ring of the current mode; clobbers a0-a1, d5-d6.
 alloc_glyph:
 	lea	VARS_HUD,%a0
 	lea	CACHE_HUD,%a1
@@ -449,6 +502,7 @@ alloc_glyph:
 ag_hit:
 	move.w	2(%a1),%d3
 	movea.l	(%sp)+,%a1
+	moveq	#0,%d4
 	rts
 ag_miss:
 	move.w	(%a0),%d3		| ring cursor
@@ -472,7 +526,14 @@ ag_miss:
 	move.w	%d2,(%a1,%d6.w)
 	move.w	%d3,2(%a1,%d6.w)
 	addq.w	#1,2(%a0)
-5:	moveq	#0,%d4			| VRAM write command for tile*32
+5:	moveq	#1,%d4
+	rts
+
+| upload_direct: d0.l = tile data in ROM, d1.w = tiles, d3.w = VRAM tile.
+| Writes through the data port (menus/messages set the row address again
+| afterwards). Clobbers a1, d4-d6.
+upload_direct:
+	moveq	#0,%d4			| VRAM write command for tile*32
 	move.w	%d3,%d4
 	lsl.l	#5,%d4
 	move.l	%d4,%d5

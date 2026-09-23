@@ -89,16 +89,14 @@ CMD_HOOKS = (
     (0xB64A, "imm", 0), (0xB688, "imm", 0), (0xB6A2, "imm", 0), (0xB6B6, "imm", 0),
     (0xB6C8, "imm", 0), (0xB6E4, "imm", 0), (0xB6F8, "imm", 0),   # "is on vacation"
 )
-# 8x8 Korean HUD text (rank names, present list). Off for now: players saw
-# sprite corruption with it enabled, so the HUD keeps the original 8x8 font
-# and the sprite VRAM pool keeps 0x40 blocks. The code paths stay in place.
-HUD_KOREAN = False
+# 8x8 Korean HUD text (rank names, present list). Glyph tiles now travel
+# through the game's staging buffer / VBlank DMA queue instead of being
+# written mid-row, which removed the dependence on tracking the VDP address.
+HUD_KOREAN = True
 POOL_BLOCKS = 0x30 if HUD_KOREAN else 0x40   # original 0x50; blocks above hold streamed glyphs
 # Strings drawn by the legacy HUD path; ignored unless HUD_KOREAN.
 HUD_RANGES = ((0xA19C, 0xA1AC), (0xA730, 0xA760), (0xA9F40, 0xA9F82),
               (0xABA00, 0xABE00), (0xB710, 0xB730))
-BLANK_HOOKS = (0xA062, 0xA09C, 0xA0BC, 0xA5A0)      # move.w #$85B4,$C00000 in HUD code
-WORD_HOOKS_D0 = (0xA590,)                           # move.w d0,$C00000 in HUD code
 PRESENT_LOOP = 0xA536       # 32-byte loop writing 13 pre-mapped glyph words
 PRESENT_LOOP_END = 0xA5C4
 PRESENT_FIELD = 13
@@ -255,14 +253,6 @@ def patch_plane_text(rom, symbols):
     patch(rom, VRAM_ALLOC_LIMIT, b"\x0c\x43\x00" + bytes((POOL_BLOCKS,)), original=b"\x0c\x43\x00\x50")
 
 
-def patch_hud_hooks(rom, symbols):
-    """Track the VDP address through the HUD's direct blank/word writes."""
-    for site in BLANK_HOOKS:
-        patch(rom, site, jsr(symbols, "plane_blank") + b"\x4e\x71", original=b"\x33\xfc\x85\xb4" + VDP_DATA)
-    for site in WORD_HOOKS_D0:
-        patch(rom, site, jsr(symbols, "plane_word_d0"), original=b"\x33\xc0" + VDP_DATA)
-
-
 def patch_present_list(rom, symbols):
     """Present list: draw names from the Korean pointer table via plane_text."""
     patch(rom, 0xA51E + 2, struct.pack(">I", PRESENT_UNKNOWN_ASCII),
@@ -377,7 +367,6 @@ def build(translations, original=None):
     if HUD_KOREAN:
         patch_present_list(rom, symbols)
         add_present_table_refs(rom, entries)
-        patch_hud_hooks(rom, symbols)
     patch_line_spacing(rom)
     rom[BLANK_ADDR:BLANK_ADDR + 64] = bytes(64)
     narrow = font.narrow_table()
